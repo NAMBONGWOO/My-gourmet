@@ -1,0 +1,110 @@
+/* =============================================
+   My Gourmet Archive — 디자인 토큰
+   ============================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  /* 배경 계층 */
+  --bg0: #0d0d0d;
+  --bg1: #141414;
+  --bg2: #1a1a1a;
+  --bg3: #222222;
+  --bg4: #2e2e2e;
+  --bg5: #3a3a3a;
+
+  /* 텍스트 계층 */
+  --t1: #f0ede8;
+  --t2: #b8b4ad;
+  --t3: #6e6b65;
+  --t4: #3a3835;
+
+  /* 골드 액센트 */
+  --gold:    #c9a96e;
+  --gold-dk: #9e7f4a;
+
+  /* 태그 6대 분류 색상 */
+  --food-bg:      #2a2040;  --food-fg:      #cecbf6;  --food-bd:      #4e3d6b;
+  --purpose-bg:   #1e2a3a;  --purpose-fg:   #b5d4f4;  --purpose-bd:   #3d4e6b;
+  --space-bg:     #2e2e18;  --space-fg:     #e8d87a;  --space-bd:     #6b621e;
+  --source-bg:    #3a2020;  --source-fg:    #f5c4b3;  --source-bd:    #6b3d3d;
+  --facility-bg:  #1e2e28;  --facility-fg:  #9fe1cb;  --facility-bd:  #3d6b5c;
+  --status-bg:    #2e1a2e;  --status-fg:    #e8b5f4;  --status-bd:    #6b3d7a;
+
+  /* 폰트 */
+  --font-display: 'DM Serif Display', serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  /* 모서리 */
+  --r-sm:   8px;
+  --r-md:  12px;
+  --r-lg:  16px;
+  --r-pill: 20px;
+
+  /* 모션 */
+  --ease-spring: cubic-bezier(.22, .68, 0, 1.2);
+}
+
+/* 리셋 */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg0);
+  color: var(--t1);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* Leaflet 다크 테마 */
+.leaflet-container {
+  background: #111820 !important;
+  font-family: var(--font-body) !important;
+}
+.leaflet-tile {
+  filter: brightness(0.6) saturate(0.4) hue-rotate(180deg);
+}
+.leaflet-control-zoom a {
+  background: var(--bg2) !important;
+  color: var(--t2) !important;
+  border-color: var(--bg5) !important;
+}
+
+/* 스크롤바 */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg5); border-radius: 4px; }
+
+/* 유틸 */
+.hidden { display: none !important; }
+
+/* 애니메이션 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes pulseGold {
+  0%,100% { box-shadow: 0 4px 20px rgba(201,169,110,.35); }
+  50%     { box-shadow: 0 4px 28px rgba(201,169,110,.6);  }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

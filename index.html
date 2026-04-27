@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#141414" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MGA" />
+  <meta name="description" content="나만의 다차원 맛집 수첩" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- 폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet 지도 -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- 앱 스타일 -->
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/screens.css" />
+
+  <title>My Gourmet Archive</title>
+</head>
+<body>
+
+  <!-- 앱 루트 -->
+  <div id="app">
+
+    <!-- ── 로딩 스플래시 ── -->
+    <div id="splash" class="splash">
+      <div class="splash-logo">My Gourmet<span>.</span></div>
+    </div>
+
+    <!-- ── 앱 래퍼 (로그인 후 표시) ── -->
+    <div id="app-wrapper" class="app-wrapper hidden">
+
+      <!-- 앱바 -->
+      <header class="app-bar" id="app-bar">
+        <div class="logo">My Gourmet<span>.</span></div>
+        <div class="avatar" id="user-avatar" title="로그아웃">?</div>
+      </header>
+
+      <!-- 화면 컨테이너 -->
+      <main class="screen-container" id="screen-container">
+        <!-- JS가 화면을 주입합니다 -->
+      </main>
+
+      <!-- FAB 추가 버튼 -->
+      <button class="fab" id="fab-add" aria-label="맛집 추가">+</button>
+
+      <!-- 하단 탭바 -->
+      <nav class="tab-bar" id="tab-bar">
+        <div class="tab-item active" data-tab="home">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"
+               viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span>홈</span>
+        </div>
+        <div class="tab-item" data-tab="search">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"
+               viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>검색</span>
+        </div>
+        <div class="tab-item" data-tab="my">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"
+               viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span>마이</span>
+        </div>
+      </nav>
+    </div>
+
+    <!-- ── 로그인 화면 ── -->
+    <div id="login-screen" class="login-screen hidden">
+      <div class="login-logo">My Gourmet<span>.</span></div>
+      <p class="login-sub">나만의 다차원 맛집 수첩<br>어디서든 강력한 태그 검색</p>
+      <div class="login-features">
+        <div class="feature-row"><span>📂</span><span>6대 분류 다차원 태그 시스템</span></div>
+        <div class="feature-row"><span>🤖</span><span>AI 자동 태그 추천</span></div>
+        <div class="feature-row"><span>📡</span><span>오프라인에서도 동작하는 PWA</span></div>
+        <div class="feature-row"><span>🗺️</span><span>내 주변 맛집 지도</span></div>
+      </div>
+      <button class="btn-gold" id="btn-google-login">
+        Google로 시작하기
+      </button>
+      <p class="login-note">로그인하면 모든 기기에서 동기화됩니다</p>
+    </div>
+
+  </div><!-- /#app -->
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp }               from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
+    import { getFirestore,
+             enableIndexedDbPersistence }  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
+    import { getAuth, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+    import { getStorage }                  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js'
+
+    // ★ 여기에 Firebase 콘솔에서 복사한 값 붙여넣기 ★
+    const firebaseConfig = {
+      apiKey:            "여기에_API_KEY",
+      authDomain:        "여기에_AUTH_DOMAIN",
+      projectId:         "여기에_PROJECT_ID",
+      storageBucket:     "여기에_STORAGE_BUCKET",
+      messagingSenderId: "여기에_SENDER_ID",
+      appId:             "여기에_APP_ID"
+    }
+
+    const firebaseApp = initializeApp(firebaseConfig)
+    window.db      = getFirestore(firebaseApp)
+    window.auth    = getAuth(firebaseApp)
+    window.storage = getStorage(firebaseApp)
+    window.GoogleAuthProvider = GoogleAuthProvider
+
+    enableIndexedDbPersistence(window.db).catch(() => {})
+
+    // 앱 JS 로드
+    const script = document.createElement('script')
+    script.src = 'js/app.js'
+    document.body.appendChild(script)
+  </script>
+
+  <!-- Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</body>
+</html>
