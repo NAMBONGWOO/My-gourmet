@@ -1002,10 +1002,46 @@ function renderMy() {
         <div class="my-email">${u?.email ?? ''}</div>
       </div>
       <div style="text-align:center;color:var(--t3);font-size:13px;">
-        저장된 맛집: <strong style="color:var(--gold);">${state.restaurants.length}곳</strong>
+        저장된 맛집:
+        <strong style="color:var(--gold);">
+          ${state.restaurants.length}곳
+        </strong>
       </div>
-      <button class="btn-ghost" id="btn-signout"
-              style="width:auto;padding:10px 28px;">로그아웃</button>
+
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+
+        <a href="upload.html" style="
+          display:block;padding:13px;
+          background:var(--bg2);
+          color:var(--t1);
+          border:0.5px solid var(--bg5);
+          border-radius:var(--r-md);
+          font-size:14px;font-weight:500;
+          text-decoration:none;text-align:center;
+        ">📂 데이터 업로드</a>
+
+        <a href="duplicate.html" style="
+          display:block;padding:13px;
+          background:var(--bg2);
+          color:var(--t1);
+          border:0.5px solid var(--bg5);
+          border-radius:var(--r-md);
+          font-size:14px;font-weight:500;
+          text-decoration:none;text-align:center;
+        ">🔍 중복 관리</a>
+
+        <button id="btn-signout" style="
+          width:100%;padding:13px;
+          background:var(--bg3);
+          color:var(--t3);
+          border:0.5px solid var(--bg5);
+          border-radius:var(--r-md);
+          font-size:14px;font-weight:500;
+          font-family:var(--font-body);
+          cursor:pointer;
+        ">로그아웃</button>
+
+      </div>
     </div>`
 
   qs('#btn-signout').addEventListener('click', () => {
