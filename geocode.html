@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#141414" />
+  <title>MGA — 좌표 변환</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <!-- 카카오 지도 SDK -->
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ccd4a9c59726bf1279ace39b12be4e18&libraries=services"></script>
+  <style>
+    body { background:var(--bg0); color:var(--t1); min-height:100vh; padding:40px 20px; font-family:var(--font-body); }
+    .container { max-width:760px; margin:0 auto; }
+
+    .page-logo { font-family:var(--font-display); font-size:24px; margin-bottom:6px; }
+    .page-logo span { color:var(--gold); }
+    .page-title { font-size:18px; font-weight:500; margin-bottom:4px; }
+    .page-sub { font-size:13px; color:var(--t3); margin-bottom:28px; }
+
+    .card { background:var(--bg2); border:0.5px solid var(--bg5); border-radius:var(--r-md); padding:20px; margin-bottom:16px; }
+    .card-title { font-size:13px; font-weight:500; color:var(--t2); margin-bottom:14px; letter-spacing:0.04em; }
+
+    /* 로그인 */
+    #login-area { text-align:center; padding:60px 20px; }
+    .btn-google { display:inline-flex; align-items:center; gap:10px; padding:13px 28px; background:var(--gold); color:#1a1100; border:none; border-radius:var(--r-md); font-size:15px; font-weight:500; font-family:var(--font-body); cursor:pointer; }
+
+    /* 상태바 */
+    .status-bar { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:var(--bg2); border:0.5px solid var(--bg5); border-radius:var(--r-md); margin-bottom:16px; flex-wrap:wrap; gap:8px; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:8px; font-size:11px; font-weight:500; }
+    .badge-gold  { background:rgba(201,169,110,.15); color:var(--gold);  border:0.5px solid rgba(201,169,110,.3); }
+    .badge-green { background:rgba(61,107,92,.3);    color:#9fe1cb;       border:0.5px solid #3d6b5c; }
+    .badge-red   { background:rgba(107,61,61,.3);    color:#f5c4b3;       border:0.5px solid #6b3d3d; }
+    .badge-blue  { background:rgba(61,78,107,.3);    color:#b5d4f4;       border:0.5px solid #3d4e6b; }
+
+    /* 진행 */
+    .progress-bar-wrap { background:var(--bg3); border-radius:8px; height:8px; overflow:hidden; margin:10px 0; }
+    .progress-bar { height:100%; background:var(--gold); border-radius:8px; transition:width 300ms; width:0%; }
+
+    .stat-row { display:flex; gap:20px; flex-wrap:wrap; margin-top:10px; }
+    .stat-item { font-size:12px; color:var(--t3); }
+    .stat-item strong { color:var(--gold); font-size:15px; }
+
+    /* 로그 */
+    .log-box { background:var(--bg0); border:0.5px solid var(--bg5); border-radius:var(--r-sm); padding:12px; height:220px; overflow-y:auto; font-size:11px; font-family:monospace; color:var(--t3); margin-top:12px; }
+    .log-ok   { color:#9fe1cb; }
+    .log-err  { color:#f5c4b3; }
+    .log-info { color:var(--gold); }
+    .log-skip { color:var(--t4); }
+
+    /* 버튼 */
+    .btn-gold  { padding:12px 28px; background:var(--gold); color:#1a1100; border:none; border-radius:var(--r-md); font-size:14px; font-weight:500; font-family:var(--font-body); cursor:pointer; transition:opacity 150ms; }
+    .btn-gold:disabled { opacity:.5; cursor:not-allowed; }
+    .btn-ghost { padding:12px 20px; background:var(--bg3); color:var(--t2); border:0.5px solid var(--bg5); border-radius:var(--r-md); font-size:14px; font-weight:500; font-family:var(--font-body); cursor:pointer; margin-left:8px; }
+
+    .flex-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+    /* 스피너 */
+    .spinner { width:24px; height:24px; border:2px solid var(--bg5); border-top-color:var(--gold); border-radius:50%; animation:spin 0.7s linear infinite; margin:30px auto; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* 미리보기 테이블 */
+    .preview-wrap { overflow-x:auto; margin-top:12px; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th { background:var(--bg3); color:var(--t3); padding:8px 10px; text-align:left; font-weight:500; border-bottom:0.5px solid var(--bg5); white-space:nowrap; }
+    td { padding:7px 10px; border-bottom:0.5px solid var(--bg4); color:var(--t2); white-space:nowrap; max-width:200px; overflow:hidden; text-overflow:ellipsis; }
+    tr:hover td { background:var(--bg3); }
+
+    a.back-link { color:var(--t3); font-size:13px; text-decoration:none; }
+    a.back-link:hover { color:var(--gold); }
+
+    .info-box { background:rgba(201,169,110,.07); border:0.5px solid rgba(201,169,110,.2); border-radius:var(--r-sm); padding:10px 14px; font-size:12px; color:var(--t2); line-height:1.7; }
+    .info-box code { background:var(--bg3); padding:1px 5px; border-radius:4px; font-size:11px; color:var(--gold); }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- 헤더 -->
+  <div style="margin-bottom:24px;">
+    <div class="page-logo">My Gourmet<span>.</span></div>
+    <div class="page-title">🗺️ 주소 → 좌표 변환</div>
+    <div class="page-sub">카카오 지도 API로 주소를 위도/경도로 변환해서 지도 핀을 찍습니다</div>
+  </div>
+
+  <!-- 로그인 전 -->
+  <div id="login-area">
+    <div style="font-size:13px;color:var(--t3);margin-bottom:20px;">로그인이 필요합니다</div>
+    <button class="btn-google" id="btn-login">Google로 로그인</button>
+  </div>
+
+  <!-- 로그인 후 -->
+  <div id="main-area" style="display:none;">
+
+    <!-- 상태바 -->
+    <div class="status-bar">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span id="user-name" style="font-size:13px;font-weight:500;"></span>
+        <span class="badge badge-gold"  id="badge-total">전체 0개</span>
+        <span class="badge badge-green" id="badge-done">좌표 있음 0개</span>
+        <span class="badge badge-red"   id="badge-none">좌표 없음 0개</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-ghost" style="padding:6px 12px;font-size:12px;" id="btn-reload">🔄 새로고침</button>
+        <a href="index.html" class="back-link">← 앱으로</a>
+      </div>
+    </div>
+
+    <!-- 안내 -->
+    <div class="card">
+      <div class="card-title">ℹ️ 변환 안내</div>
+      <div class="info-box">
+        좌표가 없는 식당의 <code>address</code> 필드를 카카오 API로 검색해서
+        <code>lat</code> / <code>lng</code> 를 자동으로 채웁니다.<br>
+        주소가 <strong style="color:var(--t1);">시군구만 있는 경우</strong> 정확도가 낮을 수 있습니다.
+        주소를 먼저 정리한 후 실행하시면 더 정확합니다.<br>
+        카카오 API 무료 한도: <code>하루 300,000건</code> — 충분합니다 😊
+      </div>
+    </div>
+
+    <!-- 로딩 -->
+    <div id="loading-area">
+      <div class="spinner"></div>
+      <div style="text-align:center;color:var(--t3);font-size:13px;">데이터 불러오는 중…</div>
+    </div>
+
+    <!-- 메인 패널 -->
+    <div id="panel-area" style="display:none;">
+
+      <!-- 미리보기 -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div class="card-title" style="margin:0;">📋 좌표 없는 식당 목록</div>
+          <span class="badge badge-red" id="preview-count">0개</span>
+        </div>
+        <div class="preview-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>상호명</th>
+                <th>주소</th>
+                <th>단축주소</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="preview-tbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--t3);">
+          상위 20개 미리보기 · 전체 변환은 아래 버튼으로
+        </div>
+      </div>
+
+      <!-- 변환 실행 -->
+      <div class="card">
+        <div class="card-title">🚀 변환 실행</div>
+
+        <!-- 옵션 -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+          <button id="opt-all" style="
+            flex:1;padding:12px;border-radius:var(--r-md);
+            border:1.5px solid var(--gold);
+            background:rgba(201,169,110,.1);color:var(--gold);
+            font-size:13px;font-weight:500;font-family:var(--font-body);cursor:pointer;">
+            🗺️ 전체 변환<br>
+            <span style="font-size:11px;font-weight:400;color:var(--t3);margin-top:4px;display:block;">
+              좌표 없는 전체 식당
+            </span>
+          </button>
+          <button id="opt-partial" style="
+            flex:1;padding:12px;border-radius:var(--r-md);
+            border:0.5px solid var(--bg5);
+            background:var(--bg3);color:var(--t2);
+            font-size:13px;font-weight:500;font-family:var(--font-body);cursor:pointer;">
+            🔢 일부 변환<br>
+            <span style="font-size:11px;font-weight:400;color:var(--t3);margin-top:4px;display:block;">
+              상위 <span id="partial-count">100</span>개만
+            </span>
+          </button>
+        </div>
+
+        <!-- 일부 변환 슬라이더 -->
+        <div id="slider-wrap" style="display:none;margin-bottom:16px;">
+          <label style="font-size:12px;color:var(--t3);display:block;margin-bottom:6px;">
+            변환 개수: <strong id="slider-val" style="color:var(--gold);">100</strong>개
+          </label>
+          <input type="range" id="slider" min="10" max="500" step="10" value="100"
+            style="width:100%;accent-color:var(--gold);" />
+        </div>
+
+        <div class="flex-row">
+          <button class="btn-gold" id="btn-start">🚀 변환 시작</button>
+          <button class="btn-ghost" id="btn-stop" style="display:none;">⏹ 중단</button>
+          <span style="font-size:12px;color:var(--t3);" id="start-hint"></span>
+        </div>
+
+        <!-- 진행 -->
+        <div id="progress-wrap" style="display:none;margin-top:16px;">
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-item">성공 <strong id="stat-ok">0</strong>개</div>
+            <div class="stat-item">실패 <strong id="stat-fail">0</strong>개</div>
+            <div class="stat-item">전체 <strong id="stat-total">0</strong>개</div>
+            <div class="stat-item" id="stat-eta"></div>
+          </div>
+          <div class="log-box" id="log-box"></div>
+        </div>
+      </div>
+
+      <!-- 완료 카드 -->
+      <div class="card" id="done-card" style="display:none;">
+        <div style="text-align:center;padding:16px 0;">
+          <div style="font-size:36px;margin-bottom:10px;">🎉</div>
+          <div style="font-size:16px;font-weight:500;margin-bottom:6px;">변환 완료!</div>
+          <div style="font-size:13px;color:var(--t3);margin-bottom:20px;" id="done-msg"></div>
+          <div class="flex-row" style="justify-content:center;">
+            <a href="index.html"><button class="btn-gold">앱에서 지도 확인 →</button></a>
+            <button class="btn-ghost" id="btn-again">추가 변환</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /#panel-area -->
+  </div><!-- /#main-area -->
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
+import { getFirestore,
+         collection, getDocs, updateDoc, doc,
+         query, where }     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
+import { getAuth, GoogleAuthProvider,
+         onAuthStateChanged,
+         signInWithPopup }  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCMkebK6mjc9cGdykCb8uvUNNebMW4v33w",
+  authDomain:        "my-gourmet-5cf8c.firebaseapp.com",
+  projectId:         "my-gourmet-5cf8c",
+  storageBucket:     "my-gourmet-5cf8c.firebasestorage.app",
+  messagingSenderId: "696974063978",
+  appId:             "1:696974063978:web:b86a0f4aef907517c18d13"
+}
+
+const app  = initializeApp(firebaseConfig)
+const db   = getFirestore(app)
+const auth = getAuth(app)
+
+let currentUser  = null
+let allDocs      = []
+let noCoorDocs   = []
+let convertMode  = 'all'   // 'all' | 'partial'
+let stopFlag     = false
+
+// ── DOM ──
+const loginArea   = document.getElementById('login-area')
+const mainArea    = document.getElementById('main-area')
+const loadingArea = document.getElementById('loading-area')
+const panelArea   = document.getElementById('panel-area')
+const logBox      = document.getElementById('log-box')
+const progressBar = document.getElementById('progress-bar')
+const doneCard    = document.getElementById('done-card')
+const btnStart    = document.getElementById('btn-start')
+const btnStop     = document.getElementById('btn-stop')
+const optAll      = document.getElementById('opt-all')
+const optPartial  = document.getElementById('opt-partial')
+const sliderWrap  = document.getElementById('slider-wrap')
+const slider      = document.getElementById('slider')
+
+// ── 인증 ──
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    currentUser = user
+    loginArea.style.display = 'none'
+    mainArea.style.display  = 'block'
+    document.getElementById('user-name').textContent = user.displayName ?? ''
+    await loadData()
+  } else {
+    loginArea.style.display = 'block'
+    mainArea.style.display  = 'none'
+  }
+})
+document.getElementById('btn-login').onclick =
+  () => signInWithPopup(auth, new GoogleAuthProvider())
+document.getElementById('btn-reload').onclick = loadData
+
+// ── 모드 선택 ──
+optAll.addEventListener('click', () => {
+  convertMode = 'all'
+  optAll.style.border    = '1.5px solid var(--gold)'
+  optAll.style.background= 'rgba(201,169,110,.1)'
+  optAll.style.color     = 'var(--gold)'
+  optPartial.style.border    = '0.5px solid var(--bg5)'
+  optPartial.style.background= 'var(--bg3)'
+  optPartial.style.color     = 'var(--t2)'
+  sliderWrap.style.display = 'none'
+  updateStartHint()
+})
+
+optPartial.addEventListener('click', () => {
+  convertMode = 'partial'
+  optPartial.style.border    = '1.5px solid var(--gold)'
+  optPartial.style.background= 'rgba(201,169,110,.1)'
+  optPartial.style.color     = 'var(--gold)'
+  optAll.style.border    = '0.5px solid var(--bg5)'
+  optAll.style.background= 'var(--bg3)'
+  optAll.style.color     = 'var(--t2)'
+  sliderWrap.style.display = 'block'
+  updateStartHint()
+})
+
+slider.addEventListener('input', () => {
+  document.getElementById('slider-val').textContent   = slider.value
+  document.getElementById('partial-count').textContent = slider.value
+  updateStartHint()
+})
+
+function updateStartHint() {
+  const cnt = convertMode === 'all' ? noCoorDocs.length : Math.min(Number(slider.value), noCoorDocs.length)
+  document.getElementById('start-hint').textContent = `${cnt}개 변환 예정`
+}
+
+// ── 데이터 로드 ──
+async function loadData() {
+  loadingArea.style.display = 'block'
+  panelArea.style.display   = 'none'
+  doneCard.style.display    = 'none'
+
+  const snap = await getDocs(
+    query(collection(db, 'restaurants'), where('userId','==', currentUser.uid))
+  )
+  allDocs    = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  noCoorDocs = allDocs.filter(r => !r.lat || !r.lng)
+
+  const hasCoor = allDocs.length - noCoorDocs.length
+
+  document.getElementById('badge-total').textContent = `전체 ${allDocs.length}개`
+  document.getElementById('badge-done').textContent  = `좌표 있음 ${hasCoor}개`
+  document.getElementById('badge-none').textContent  = `좌표 없음 ${noCoorDocs.length}개`
+  document.getElementById('preview-count').textContent = `${noCoorDocs.length}개`
+
+  renderPreview()
+  updateStartHint()
+
+  loadingArea.style.display = 'none'
+  panelArea.style.display   = 'block'
+}
+
+// ── 미리보기 ──
+function renderPreview() {
+  const tbody  = document.getElementById('preview-tbody')
+  const sample = noCoorDocs.slice(0, 20)
+
+  tbody.innerHTML = sample.map(r => `
+    <tr>
+      <td title="${r.name}">${r.name?.length > 16 ? r.name.slice(0,16)+'…' : r.name}</td>
+      <td title="${r.address ?? ''}">${(r.address ?? '주소없음').slice(0,22)}</td>
+      <td>${r.shortAddr ?? '—'}</td>
+      <td>${r.address
+        ? '<span class="badge badge-blue">변환 가능</span>'
+        : '<span class="badge badge-red">주소 없음</span>'}</td>
+    </tr>`).join('')
+}
+
+// ── 카카오 지오코딩 ──
+function geocodeAddress(address) {
+  return new Promise((resolve) => {
+    if (!address) { resolve(null); return }
+    const geocoder = new kakao.maps.services.Geocoder()
+    geocoder.addressSearch(address, (result, status) => {
+      if (status === kakao.maps.services.Status.OK && result.length > 0) {
+        resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) })
+      } else {
+        // 주소 검색 실패 시 키워드 검색 시도
+        const ps = new kakao.maps.services.Places()
+        ps.keywordSearch(address, (res, st) => {
+          if (st === kakao.maps.services.Status.OK && res.length > 0) {
+            resolve({ lat: parseFloat(res[0].y), lng: parseFloat(res[0].x) })
+          } else {
+            resolve(null)
+          }
+        })
+      }
+    })
+  })
+}
+
+// ── 변환 시작 ──
+btnStart.onclick = async () => {
+  const target = convertMode === 'all'
+    ? noCoorDocs
+    : noCoorDocs.slice(0, Number(slider.value))
+
+  const total = target.filter(r => r.address).length
+  if (!total) { alert('변환할 주소가 없습니다'); return }
+
+  stopFlag = false
+  btnStart.disabled = true
+  btnStop.style.display = 'inline-block'
+  document.getElementById('progress-wrap').style.display = 'block'
+  doneCard.style.display = 'none'
+  logBox.innerHTML = ''
+
+  document.getElementById('stat-total').textContent = total
+  let ok = 0, fail = 0
+  const startTime = Date.now()
+
+  log(`변환 시작: ${total}개`, 'info')
+
+  for (const r of target) {
+    if (stopFlag) { log('⏹ 중단됨', 'info'); break }
+    if (!r.address) { log(`건너뜀 (주소없음): ${r.name}`, 'skip'); continue }
+
+    const coords = await geocodeAddress(r.address)
+
+    if (coords) {
+      try {
+        await updateDoc(doc(db, 'restaurants', r.id), {
+          lat: coords.lat,
+          lng: coords.lng,
+        })
+        ok++
+        log(`✓ ${r.name} → ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`, 'ok')
+      } catch(e) {
+        fail++
+        log(`✗ ${r.name}: ${e.message}`, 'err')
+      }
+    } else {
+      fail++
+      log(`✗ 검색 실패: ${r.name} (${r.address})`, 'err')
+    }
+
+    // 진행률 업데이트
+    const done = ok + fail
+    const pct  = Math.round(done / total * 100)
+    progressBar.style.width = pct + '%'
+    document.getElementById('stat-ok').textContent   = ok
+    document.getElementById('stat-fail').textContent = fail
+
+    const elapsed = (Date.now() - startTime) / 1000
+    const remain  = elapsed / done * (total - done)
+    if (remain > 0) {
+      const m = Math.floor(remain / 60)
+      const s = Math.floor(remain % 60)
+      document.getElementById('stat-eta').textContent =
+        `남은 시간 약 ${m > 0 ? m+'분 ' : ''}${s}초`
+    }
+    logBox.scrollTop = logBox.scrollHeight
+
+    // API 호출 간격 (카카오 제한 방지)
+    await delay(120)
+  }
+
+  // 완료
+  btnStart.disabled     = false
+  btnStop.style.display = 'none'
+  doneCard.style.display = 'block'
+  document.getElementById('done-msg').textContent =
+    `성공 ${ok}개 · 실패 ${fail}개 · 총 ${ok+fail}개 처리`
+  log(`완료! 성공 ${ok}개 / 실패 ${fail}개`, 'info')
+  await loadData()
+}
+
+btnStop.onclick = () => { stopFlag = true }
+
+document.getElementById('btn-again').onclick = async () => {
+  doneCard.style.display = 'none'
+  document.getElementById('progress-wrap').style.display = 'none'
+  logBox.innerHTML = ''
+  progressBar.style.width = '0%'
+  await loadData()
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+function log(msg, type = '') {
+  const div = document.createElement('div')
+  div.className = type ? `log-${type}` : ''
+  div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`
+  logBox.appendChild(div)
+  logBox.scrollTop = logBox.scrollHeight
+}
+</script>
+</body>
+</html>
