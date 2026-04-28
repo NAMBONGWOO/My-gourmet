@@ -3,77 +3,61 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#141414" />
+  <meta name="theme-color" content="#f8f9fa" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#141414" media="(prefers-color-scheme: dark)" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="MGA" />
   <meta name="description" content="나만의 다차원 맛집 수첩" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="manifest" href="manifest.json" />
-
-  <!-- 폰트 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
-
-  <!-- Leaflet 지도 -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-  <!-- 앱 스타일 -->
   <link rel="stylesheet" href="css/tokens.css" />
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/screens.css" />
-
   <title>My Gourmet Archive</title>
 </head>
 <body>
-
-  <!-- 앱 루트 -->
   <div id="app">
 
-    <!-- ── 로딩 스플래시 ── -->
     <div id="splash" class="splash">
       <div class="splash-logo">My Gourmet<span>.</span></div>
     </div>
 
-    <!-- ── 앱 래퍼 (로그인 후 표시) ── -->
     <div id="app-wrapper" class="app-wrapper hidden">
-
-      <!-- 앱바 -->
       <header class="app-bar" id="app-bar">
         <div class="logo">My Gourmet<span>.</span></div>
-        <div class="avatar" id="user-avatar" title="로그아웃">?</div>
       </header>
 
-      <!-- 화면 컨테이너 -->
-      <main class="screen-container" id="screen-container">
-        <!-- JS가 화면을 주입합니다 -->
-      </main>
+      <main class="screen-container" id="screen-container"></main>
 
-      <!-- FAB 추가 버튼 -->
       <button class="fab" id="fab-add" aria-label="맛집 추가">+</button>
 
-      <!-- 하단 탭바 -->
       <nav class="tab-bar" id="tab-bar">
         <div class="tab-item active" data-tab="home">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"
-               viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
           <span>홈</span>
         </div>
-        <div class="tab-item" data-tab="search">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"
-               viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
+        <div class="tab-item" data-tab="list">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/>
+            <line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/>
+            <line x1="3" y1="18" x2="3.01" y2="18"/>
           </svg>
-          <span>검색</span>
+          <span>리스트</span>
         </div>
         <div class="tab-item" data-tab="my">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"
-               viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
           </svg>
@@ -82,115 +66,76 @@
       </nav>
     </div>
 
-    <!-- ── 로그인 화면 ── -->
     <div id="login-screen" class="login-screen hidden">
       <div class="login-logo">My Gourmet<span>.</span></div>
-      <p class="login-sub">나만의 다차원 맛집 수첩<br>어디서든 강력한 태그 검색</p>
+      <p class="login-sub">나만의 다차원 맛집 수첩<br>내 주변 맛집을 태그로 탐색</p>
       <div class="login-features">
+        <div class="feature-row"><span>🗺️</span><span>내 위치 주변 맛집 지도</span></div>
         <div class="feature-row"><span>📂</span><span>6대 분류 다차원 태그 시스템</span></div>
-        <div class="feature-row"><span>🤖</span><span>AI 자동 태그 추천</span></div>
+        <div class="feature-row"><span>📺</span><span>방송·가이드·인증 검증 출처</span></div>
         <div class="feature-row"><span>📡</span><span>오프라인에서도 동작하는 PWA</span></div>
-        <div class="feature-row"><span>🗺️</span><span>내 주변 맛집 지도</span></div>
       </div>
-      <!-- 이메일 입력 -->
-<input class="input-field" id="login-email"
-  type="email" placeholder="이메일"
-  style="width:100%;margin-bottom:8px;" />
-<input class="input-field" id="login-pw"
-  type="password" placeholder="비밀번호"
-  style="width:100%;margin-bottom:12px;" />
-
-<button class="btn-gold" id="btn-email-login">
-  이메일로 로그인
-</button>
-<button class="btn-ghost" id="btn-email-join"
-  style="margin-top:8px;">
-  처음이신가요? 회원가입
-</button>
-<div style="margin:14px 0;text-align:center;
-     color:var(--t4);font-size:12px;">또는</div>
-<button class="btn-ghost" id="btn-google-login">
-  Google로 로그인
-</button>
-
+      <button class="btn-gold" id="btn-google-login">Google로 시작하기</button>
       <p class="login-note">로그인하면 모든 기기에서 동기화됩니다</p>
     </div>
 
-  </div><!-- /#app -->
+  </div>
 
-  <!-- Firebase SDK -->
   <script type="module">
-  import { initializeApp }
-    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
-  import { getFirestore,
-           enableIndexedDbPersistence,
-           collection, query, where, orderBy,
-           onSnapshot, addDoc, updateDoc, deleteDoc,
-           doc, serverTimestamp, arrayUnion, arrayRemove }
-    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
-  import { getAuth,
-           GoogleAuthProvider,
-           onAuthStateChanged,
-           signInWithPopup,
-           signOut }
-    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
-  import { getStorage }
-    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js'
+    import { initializeApp }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
+    import { getFirestore, enableIndexedDbPersistence,
+             collection, query, where, orderBy,
+             onSnapshot, addDoc, updateDoc, deleteDoc,
+             doc, serverTimestamp, arrayUnion, arrayRemove }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
+    import { getAuth, GoogleAuthProvider,
+             onAuthStateChanged, signInWithPopup, signOut }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+    import { getStorage }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js'
 
-  const firebaseConfig = {
-    apiKey:            "AIzaSyCMkebK6mjc9cGdykCb8uvUNNebMW4v33w",
-    authDomain:        "my-gourmet-5cf8c.firebaseapp.com",
-    projectId:         "my-gourmet-5cf8c",
-    storageBucket:     "my-gourmet-5cf8c.firebasestorage.app",
-    messagingSenderId: "696974063978",
-    appId:             "1:696974063978:web:b86a0f4aef907517c18d13"
-  }
+    const firebaseConfig = {
+      apiKey:            "AIzaSyCMkebK6mjc9cGdykCb8uvUNNebMW4v33w",
+      authDomain:        "my-gourmet-5cf8c.firebaseapp.com",
+      projectId:         "my-gourmet-5cf8c",
+      storageBucket:     "my-gourmet-5cf8c.firebasestorage.app",
+      messagingSenderId: "696974063978",
+      appId:             "1:696974063978:web:b86a0f4aef907517c18d13"
+    }
 
-  const firebaseApp = initializeApp(firebaseConfig)
+    const firebaseApp       = initializeApp(firebaseConfig)
+    window.db               = getFirestore(firebaseApp)
+    window.auth             = getAuth(firebaseApp)
+    window.storage          = getStorage(firebaseApp)
+    window.GoogleAuthProvider  = GoogleAuthProvider
+    window.onAuthStateChanged  = onAuthStateChanged
+    window.signInWithPopup     = signInWithPopup
+    window.signOut             = signOut
+    window.collection          = collection
+    window.query               = query
+    window.where               = where
+    window.orderBy             = orderBy
+    window.onSnapshot          = onSnapshot
+    window.addDoc              = addDoc
+    window.updateDoc           = updateDoc
+    window.deleteDoc           = deleteDoc
+    window.firestoreDoc        = doc
+    window.serverTimestamp     = serverTimestamp
+    window.arrayUnion          = arrayUnion
+    window.arrayRemove         = arrayRemove
 
-  // 전역으로 노출
-  window.db             = getFirestore(firebaseApp)
-  window.auth           = getAuth(firebaseApp)
-  window.storage        = getStorage(firebaseApp)
-  window.GoogleAuthProvider  = GoogleAuthProvider
-  window.onAuthStateChanged  = onAuthStateChanged
-  window.signInWithPopup     = signInWithPopup
-  window.signOut             = signOut
-  window.collection     = collection
-  window.query          = query
-  window.where          = where
-  window.orderBy        = orderBy
-  window.onSnapshot     = onSnapshot
-  window.addDoc         = addDoc
-  window.updateDoc      = updateDoc
-  window.deleteDoc      = deleteDoc
-  window.firestoreDoc   = doc
-  window.serverTimestamp= serverTimestamp
-  window.arrayUnion     = arrayUnion
-  window.arrayRemove    = arrayRemove
+    enableIndexedDbPersistence(window.db).catch(() => {})
 
-  enableIndexedDbPersistence(window.db).catch(() => {})
-
-  // tags.js 먼저, 그 다음 app.js 순서대로 로드
-  async function loadScripts() {
-    await loadScript('js/tags.js')
-    await loadScript('js/app.js')
-  }
-
-  function loadScript(src) {
-    return new Promise((resolve, reject) => {
-      const s = document.createElement('script')
-      s.src = src
-      s.onload = resolve
-      s.onerror = reject
-      document.body.appendChild(s)
-    })
-  }
-
-  loadScripts()
-</script>
-
-  <!-- Leaflet -->
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script')
+        s.src = src; s.onload = resolve; s.onerror = reject
+        document.body.appendChild(s)
+      })
+    }
+    loadScript('js/tags.js').then(() => loadScript('js/app.js'))
+  </script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
 </html>
