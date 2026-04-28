@@ -57,6 +57,13 @@ html, body {
   overflow: hidden;
 }
 
+/* 관리 페이지용 스크롤 허용 */
+html.page-scroll,
+html.page-scroll body {
+  height: auto !important;
+  overflow-y: auto !important;
+}
+
 body {
   font-family: var(--font-body);
   background: var(--bg0);
