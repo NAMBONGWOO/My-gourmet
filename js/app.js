@@ -98,6 +98,35 @@ $('btn-google-login').addEventListener('click', async () => {
     btn.textContent = 'Google로 시작하기'
   }
 })
+// 이메일 회원가입
+document.getElementById('btn-email-join')
+  ?.addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value
+    const pw    = document.getElementById('login-pw').value
+    if (!email || !pw) { alert('이메일과 비밀번호를 입력하세요'); return }
+    try {
+      const { createUserWithEmailAndPassword } =
+        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')
+      await createUserWithEmailAndPassword(window.auth, email, pw)
+    } catch(e) {
+      alert('오류: ' + e.message)
+    }
+})
+
+// 이메일 로그인
+document.getElementById('btn-email-login')
+  ?.addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value
+    const pw    = document.getElementById('login-pw').value
+    if (!email || !pw) { alert('이메일과 비밀번호를 입력하세요'); return }
+    try {
+      const { signInWithEmailAndPassword } =
+        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')
+      await signInWithEmailAndPassword(window.auth, email, pw)
+    } catch(e) {
+      alert('오류: ' + e.message)
+    }
+})
 
 userAvatar.addEventListener('click', () => {
   if (confirm2('로그아웃 할까요?')) signOut(window.auth)
