@@ -144,12 +144,14 @@ function subscribeRestaurants() {
     orderBy('createdAt', 'desc')
   )
 
-  state.unsubscribe = onSnapshot(q, snap => {
-    state.restaurants = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-    refreshCurrentScreen()
-  }, err => console.error(err))
+  state.unsubscribe = onSnapshot(q,
+    snap => {
+      state.restaurants = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      refreshCurrentScreen()
+    },
+    err => console.error(err)
+  )
 }
-
 async function addRestaurant(data) {
   await addDoc(collection(window.db, COL), {
     userId:    state.user.uid,
