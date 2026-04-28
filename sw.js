@@ -1,24 +1,8 @@
 // sw.js — My Gourmet Archive 서비스워커
 const CACHE = 'mga-v1'
 
-const PRECACHE = [
-  '/',
-  '/index.html',
-  '/css/tokens.css',
-  '/css/components.css',
-  '/css/screens.css',
-  '/js/tags.js',
-  '/js/app.js',
-  '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-]
-
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(PRECACHE))
-  )
+  // 캐시 프리로드 없이 바로 활성화
   self.skipWaiting()
 })
 
@@ -34,8 +18,10 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url)
 
-  // Firebase / Firestore → 항상 네트워크 우선
-  if (url.hostname.includes('firebase') || url.hostname.includes('firestore')) {
+  // Firebase / Firestore → 네트워크 우선
+  if (url.hostname.includes('firebase') ||
+      url.hostname.includes('firestore') ||
+      url.hostname.includes('gstatic')) {
     return e.respondWith(fetch(e.request).catch(() => caches.match(e.request)))
   }
 
@@ -51,8 +37,8 @@ self.addEventListener('fetch', e => {
     )
   }
 
-  // 나머지 → 캐시 우선 (네트워크 폴백)
+  // 나머지 → 네트워크 우선, 실패시 캐시
   e.respondWith(
-    caches.match(e.request).then(r => r ?? fetch(e.request))
+    fetch(e.request).catch(() => caches.match(e.request))
   )
 })
