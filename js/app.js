@@ -759,7 +759,18 @@ function renderDetail(r) {
 
         <!-- 길찾기 -->
         <button class="btn-ghost" id="btn-directions">카카오맵에서 길찾기 →</button>
-
+<a href="upload.html" style="
+  display:block; margin-top:12px;
+  padding:10px 28px;
+  background:var(--bg3);
+  color:var(--t3);
+  border:0.5px solid var(--bg5);
+  border-radius:var(--r-md);
+  font-size:13px;
+  font-weight:500;
+  text-decoration:none;
+  text-align:center;
+">📂 데이터 업로드 관리</a>
       </div>
     </div>
   `
