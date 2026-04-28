@@ -64,16 +64,47 @@ const TAG_CATEGORIES = [
   {
     id:'source', num:'04', name:'검증 출처', isMultiple:true,
     groups:[
-      { label:'방송', tags:[
-        {id:'source__백반기행', label:'백반기행'}, {id:'source__수요미식회', label:'수요미식회'},
-        {id:'source__생활의달인', label:'생활의달인'}, {id:'source__생생정보통', label:'생생정보통'},
+      { label:'📺 방송 프로그램', tags:[
+        {id:'source__식객허영만',      label:'식객허영만 백반기행'},
+        {id:'source__수요미식회',      label:'수요미식회'},
+        {id:'source__맛있는녀석들',    label:'맛있는녀석들'},
+        {id:'source__생활의달인',      label:'생활의달인'},
+        {id:'source__생생정보통',      label:'생생정보통'},
+        {id:'source__성시경먹을텐데',  label:'성시경먹을텐데'},
+        {id:'source__백종원3대천왕',   label:'백종원 3대천왕'},
+        {id:'source__토요일은밥이좋아',label:'토요일은 밥이좋아'},
+        {id:'source__줄서는식당',      label:'줄서는식당'},
+        {id:'source__흑백요리사',      label:'흑백요리사'},
       ]},
-      { label:'가이드', tags:[
-        {id:'source__미슐랭', label:'미슐랭 가이드'}, {id:'source__블루리본', label:'블루리본'},
+      { label:'📕 미식 가이드', tags:[
+        {id:'source__미슐랭가이드',    label:'미슐랭 가이드'},
+        {id:'source__미슐랭빕구르망',  label:'미슐랭 빕구르망'},
+        {id:'source__블루리본',        label:'블루리본'},
+        {id:'source__식신우수',        label:'식신 우수레스토랑'},
+        {id:'source__망고플레이트',    label:'망고플레이트 인기'},
+        {id:'source__테이스트아틀라스',label:'테이스트아틀라스'},
       ]},
-      { label:'수집 출처', tags:[
-        {id:'source__블로그', label:'블로그 발굴'}, {id:'source__인스타', label:'인스타 발굴'},
-        {id:'source__지인', label:'지인 추천'}, {id:'source__직접', label:'직접 발견'},
+      { label:'✅ 국가/기관 인증', tags:[
+        {id:'source__백년가게',        label:'백년가게'},
+        {id:'source__백년소공인',      label:'백년소공인'},
+        {id:'source__안심식당',        label:'안심식당'},
+        {id:'source__모범음식점',      label:'모범음식점'},
+        {id:'source__착한가격업소',    label:'착한가격업소'},
+        {id:'source__위생등급우수',    label:'위생등급 매우우수'},
+        {id:'source__지자체맛집',      label:'지자체 선정맛집'},
+        {id:'source__명인인증',        label:'대한민국 명인'},
+      ]},
+      { label:'🌱 테마/특수 인증', tags:[
+        {id:'source__비건인증',        label:'비건 인증'},
+        {id:'source__할랄인증',        label:'할랄 인증'},
+        {id:'source__친환경농산물',    label:'친환경 농산물'},
+      ]},
+      { label:'🔍 수집 출처', tags:[
+        {id:'source__블로그',  label:'블로그 발굴'},
+        {id:'source__인스타',  label:'인스타 발굴'},
+        {id:'source__유튜브',  label:'유튜브 발굴'},
+        {id:'source__지인',    label:'지인 추천'},
+        {id:'source__직접',    label:'직접 발견'},
       ]},
     ]
   },
