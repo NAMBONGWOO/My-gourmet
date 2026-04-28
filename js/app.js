@@ -1007,7 +1007,7 @@ function renderMy() {
 ══════════════════════════════════════════ */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+   navigator.serviceWorker.register('/My-gourmet/sw.js')
       .then(() => console.log('SW 등록 완료'))
       .catch(e => console.warn('SW 등록 실패', e))
   })
