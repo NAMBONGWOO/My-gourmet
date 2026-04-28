@@ -102,36 +102,75 @@
 
   <!-- Firebase SDK -->
   <script type="module">
-    import { initializeApp }               from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
-    import { getFirestore,
-             enableIndexedDbPersistence }  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
-    import { getAuth, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
-    import { getStorage }                  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js'
+  import { initializeApp }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
+  import { getFirestore,
+           enableIndexedDbPersistence,
+           collection, query, where, orderBy,
+           onSnapshot, addDoc, updateDoc, deleteDoc,
+           doc, serverTimestamp, arrayUnion, arrayRemove }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
+  import { getAuth,
+           GoogleAuthProvider,
+           onAuthStateChanged,
+           signInWithPopup,
+           signOut }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+  import { getStorage }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js'
 
-    // ★ 여기에 Firebase 콘솔에서 복사한 값 붙여넣기 ★
-    const firebaseConfig = {
-      apiKey: "AIzaSyCMkebK6mjc9cGdykCb8uvUNNebMW4v33w",
-      authDomain: "my-gourmet-5cf8c.firebaseapp.com",
-      projectId: "my-gourmet-5cf8c",
-      storageBucket: "my-gourmet-5cf8c.firebasestorage.app",
-      messagingSenderId: "696974063978",
-      appId: "1:696974063978:web:b86a0f4aef907517c18d13",
-      measurementId: "G-FYLDX5L0NF"
-    }
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCMkebK6mjc9cGdykCb8uvUNNebMW4v33w",
+    authDomain:        "my-gourmet-5cf8c.firebaseapp.com",
+    projectId:         "my-gourmet-5cf8c",
+    storageBucket:     "my-gourmet-5cf8c.firebasestorage.app",
+    messagingSenderId: "696974063978",
+    appId:             "1:696974063978:web:b86a0f4aef907517c18d13"
+  }
 
-    const firebaseApp = initializeApp(firebaseConfig)
-    window.db      = getFirestore(firebaseApp)
-    window.auth    = getAuth(firebaseApp)
-    window.storage = getStorage(firebaseApp)
-    window.GoogleAuthProvider = GoogleAuthProvider
+  const firebaseApp = initializeApp(firebaseConfig)
 
-    enableIndexedDbPersistence(window.db).catch(() => {})
+  // 전역으로 노출
+  window.db             = getFirestore(firebaseApp)
+  window.auth           = getAuth(firebaseApp)
+  window.storage        = getStorage(firebaseApp)
+  window.GoogleAuthProvider  = GoogleAuthProvider
+  window.onAuthStateChanged  = onAuthStateChanged
+  window.signInWithPopup     = signInWithPopup
+  window.signOut             = signOut
+  window.collection     = collection
+  window.query          = query
+  window.where          = where
+  window.orderBy        = orderBy
+  window.onSnapshot     = onSnapshot
+  window.addDoc         = addDoc
+  window.updateDoc      = updateDoc
+  window.deleteDoc      = deleteDoc
+  window.firestoreDoc   = doc
+  window.serverTimestamp= serverTimestamp
+  window.arrayUnion     = arrayUnion
+  window.arrayRemove    = arrayRemove
 
-    // 앱 JS 로드
-    const script = document.createElement('script')
-    script.src = 'js/app.js'
-    document.body.appendChild(script)
-  </script>
+  enableIndexedDbPersistence(window.db).catch(() => {})
+
+  // tags.js 먼저, 그 다음 app.js 순서대로 로드
+  async function loadScripts() {
+    await loadScript('js/tags.js')
+    await loadScript('js/app.js')
+  }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script')
+      s.src = src
+      s.onload = resolve
+      s.onerror = reject
+      document.body.appendChild(s)
+    })
+  }
+
+  loadScripts()
+</script>
 
   <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
