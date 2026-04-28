@@ -6,15 +6,15 @@
 /* ══════════════════════════════════════════
    Firestore 헬퍼
 ══════════════════════════════════════════ */
-// Firebase 함수는 index.html에서 window.*로 주입됨
-const { collection, query, where, orderBy,
-        onSnapshot, addDoc, updateDoc, deleteDoc,
-        serverTimestamp, arrayUnion, arrayRemove } = window
+const {
+  collection, query, where, orderBy, onSnapshot,
+  addDoc, updateDoc, deleteDoc, doc,
+  serverTimestamp, arrayUnion, arrayRemove,
+} = window.firestore ?? await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
 
-const doc              = window.firestoreDoc
-const onAuthStateChanged = window.onAuthStateChanged
-const signInWithPopup  = window.signInWithPopup
-const signOut          = window.signOut
+const {
+  onAuthStateChanged, signInWithPopup, signOut,
+} = window.firebaseAuth ?? await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')
 
 const COL = 'restaurants'
 
@@ -98,35 +98,6 @@ $('btn-google-login').addEventListener('click', async () => {
     btn.textContent = 'Google로 시작하기'
   }
 })
-// 이메일 회원가입
-document.getElementById('btn-email-join')
-  ?.addEventListener('click', async () => {
-    const email = document.getElementById('login-email').value
-    const pw    = document.getElementById('login-pw').value
-    if (!email || !pw) { alert('이메일과 비밀번호를 입력하세요'); return }
-    try {
-      const { createUserWithEmailAndPassword } =
-        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')
-      await createUserWithEmailAndPassword(window.auth, email, pw)
-    } catch(e) {
-      alert('오류: ' + e.message)
-    }
-})
-
-// 이메일 로그인
-document.getElementById('btn-email-login')
-  ?.addEventListener('click', async () => {
-    const email = document.getElementById('login-email').value
-    const pw    = document.getElementById('login-pw').value
-    if (!email || !pw) { alert('이메일과 비밀번호를 입력하세요'); return }
-    try {
-      const { signInWithEmailAndPassword } =
-        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')
-      await signInWithEmailAndPassword(window.auth, email, pw)
-    } catch(e) {
-      alert('오류: ' + e.message)
-    }
-})
 
 userAvatar.addEventListener('click', () => {
   if (confirm2('로그아웃 할까요?')) signOut(window.auth)
@@ -144,14 +115,12 @@ function subscribeRestaurants() {
     orderBy('createdAt', 'desc')
   )
 
-  state.unsubscribe = onSnapshot(q,
-    snap => {
-      state.restaurants = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      refreshCurrentScreen()
-    },
-    err => console.error(err)
-  )
+  state.unsubscribe = onSnapshot(q, snap => {
+    state.restaurants = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    refreshCurrentScreen()
+  }, err => console.error(err))
 }
+
 async function addRestaurant(data) {
   await addDoc(collection(window.db, COL), {
     userId:    state.user.uid,
@@ -759,18 +728,7 @@ function renderDetail(r) {
 
         <!-- 길찾기 -->
         <button class="btn-ghost" id="btn-directions">카카오맵에서 길찾기 →</button>
-<a href="upload.html" style="
-  display:block; margin-top:12px;
-  padding:10px 28px;
-  background:var(--bg3);
-  color:var(--t3);
-  border:0.5px solid var(--bg5);
-  border-radius:var(--r-md);
-  font-size:13px;
-  font-weight:500;
-  text-decoration:none;
-  text-align:center;
-">📂 데이터 업로드 관리</a>
+
       </div>
     </div>
   `
@@ -992,6 +950,15 @@ function renderSearch() {
 ══════════════════════════════════════════ */
 function renderMy() {
   const u = state.user
+  const menuStyle = `
+    display:block;padding:13px;
+    background:var(--bg2);color:var(--t1);
+    border:0.5px solid var(--bg5);
+    border-radius:var(--r-md);
+    font-size:14px;font-weight:500;
+    text-decoration:none;text-align:center;
+    transition:border-color 150ms;`
+
   screenCont.innerHTML = `
     <div class="my-screen screen-enter">
       <div class="my-avatar-large">
@@ -1003,44 +970,23 @@ function renderMy() {
       </div>
       <div style="text-align:center;color:var(--t3);font-size:13px;">
         저장된 맛집:
-        <strong style="color:var(--gold);">
-          ${state.restaurants.length}곳
-        </strong>
+        <strong style="color:var(--gold);">${state.restaurants.length}곳</strong>
       </div>
 
       <div style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:8px;">
-
-        <a href="upload.html" style="
-          display:block;padding:13px;
-          background:var(--bg2);
-          color:var(--t1);
-          border:0.5px solid var(--bg5);
-          border-radius:var(--r-md);
-          font-size:14px;font-weight:500;
-          text-decoration:none;text-align:center;
-        ">📂 데이터 업로드</a>
-
-        <a href="duplicate.html" style="
-          display:block;padding:13px;
-          background:var(--bg2);
-          color:var(--t1);
-          border:0.5px solid var(--bg5);
-          border-radius:var(--r-md);
-          font-size:14px;font-weight:500;
-          text-decoration:none;text-align:center;
-        ">🔍 중복 관리</a>
+        <a href="upload.html"   style="${menuStyle}">📂 데이터 업로드</a>
+        <a href="geocode.html"  style="${menuStyle}">🗺️ 주소 → 좌표 변환</a>
+        <a href="duplicate.html"style="${menuStyle}">🔍 중복 관리</a>
 
         <button id="btn-signout" style="
           width:100%;padding:13px;
-          background:var(--bg3);
-          color:var(--t3);
+          background:var(--bg3);color:var(--t3);
           border:0.5px solid var(--bg5);
           border-radius:var(--r-md);
           font-size:14px;font-weight:500;
-          font-family:var(--font-body);
-          cursor:pointer;
-        ">로그아웃</button>
-
+          font-family:var(--font-body);cursor:pointer;">
+          로그아웃
+        </button>
       </div>
     </div>`
 
@@ -1054,7 +1000,7 @@ function renderMy() {
 ══════════════════════════════════════════ */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/My-gourmet/sw.js')
+    navigator.serviceWorker.register('/sw.js')
       .then(() => console.log('SW 등록 완료'))
       .catch(e => console.warn('SW 등록 실패', e))
   })
