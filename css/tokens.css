@@ -1,67 +1,100 @@
 /* =============================================
    My Gourmet Archive — 디자인 토큰
+   B안: 클린 쿨톤 라이트 + 시스템 다크모드 연동
    ============================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap');
 
+/* ── 라이트 모드 (기본) ── */
 :root {
-  /* 배경 계층 */
-  --bg0: #0d0d0d;
-  --bg1: #141414;
-  --bg2: #1a1a1a;
-  --bg3: #222222;
-  --bg4: #2e2e2e;
-  --bg5: #3a3a3a;
+  --bg0: #f1f3f5;
+  --bg1: #f8f9fa;
+  --bg2: #ffffff;
+  --bg3: #f1f3f5;
+  --bg4: #e9ecef;
+  --bg5: #dee2e6;
 
-  /* 텍스트 계층 */
-  --t1: #f0ede8;
-  --t2: #b8b4ad;
-  --t3: #6e6b65;
-  --t4: #3a3835;
+  --t1: #1a1a2e;
+  --t2: #495057;
+  --t3: #868e96;
+  --t4: #ced4da;
 
-  /* 골드 액센트 */
   --gold:    #c9a96e;
   --gold-dk: #9e7f4a;
 
-  /* 태그 6대 분류 색상 */
-  --food-bg:      #2a2040;  --food-fg:      #cecbf6;  --food-bd:      #4e3d6b;
-  --purpose-bg:   #1e2a3a;  --purpose-fg:   #b5d4f4;  --purpose-bd:   #3d4e6b;
-  --space-bg:     #2e2e18;  --space-fg:     #e8d87a;  --space-bd:     #6b621e;
-  --source-bg:    #3a2020;  --source-fg:    #f5c4b3;  --source-bd:    #6b3d3d;
-  --facility-bg:  #1e2e28;  --facility-fg:  #9fe1cb;  --facility-bd:  #3d6b5c;
-  --status-bg:    #2e1a2e;  --status-fg:    #e8b5f4;  --status-bd:    #6b3d7a;
+  --food-bg:      #f3f0ff;  --food-fg:      #5f3dc4;  --food-bd:      #d0bfff;
+  --purpose-bg:   #e7f5ff;  --purpose-fg:   #1864ab;  --purpose-bd:   #a5d8ff;
+  --space-bg:     #fff9db;  --space-fg:     #7a5800;  --space-bd:     #ffe066;
+  --source-bg:    #fff4e6;  --source-fg:    #7d3800;  --source-bd:    #ffd8a8;
+  --facility-bg:  #ebfbee;  --facility-fg:  #1a5c2a;  --facility-bd:  #8ce99a;
+  --status-bg:    #f8f0fc;  --status-fg:    #6a0dad;  --status-bd:    #e599f7;
 
-  /* 폰트 */
   --font-display: 'DM Serif Display', serif;
   --font-body:    'DM Sans', sans-serif;
 
-  /* 모서리 */
   --r-sm:   8px;
   --r-md:  12px;
   --r-lg:  16px;
   --r-pill: 20px;
 
-  /* 모션 */
   --ease-spring: cubic-bezier(.22, .68, 0, 1.2);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
 }
 
-/* 리셋 */
+/* ── 다크 모드 (시스템 설정 연동) ── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg0: #0d0d0d;
+    --bg1: #141414;
+    --bg2: #1a1a1a;
+    --bg3: #222222;
+    --bg4: #2e2e2e;
+    --bg5: #3a3a3a;
+
+    --t1: #f0ede8;
+    --t2: #b8b4ad;
+    --t3: #6e6b65;
+    --t4: #3a3835;
+
+    --food-bg:      #2a2040;  --food-fg:      #cecbf6;  --food-bd:      #4e3d6b;
+    --purpose-bg:   #1e2a3a;  --purpose-fg:   #b5d4f4;  --purpose-bd:   #3d4e6b;
+    --space-bg:     #2e2e18;  --space-fg:     #e8d87a;  --space-bd:     #6b621e;
+    --source-bg:    #3a2020;  --source-fg:    #f5c4b3;  --source-bd:    #6b3d3d;
+    --facility-bg:  #1e2e28;  --facility-fg:  #9fe1cb;  --facility-bd:  #3d6b5c;
+    --status-bg:    #2e1a2e;  --status-fg:    #e8b5f4;  --status-bd:    #6b3d7a;
+
+    --shadow-sm: none;
+    --shadow-md: none;
+  }
+}
+
+/* ── 리셋 ── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* ── 앱 기본 (PWA) ── */
 html, body {
   height: 100%;
   overflow: hidden;
 }
 
-/* 관리 페이지용 스크롤 허용 */
-html.page-scroll,
+/* ── 관리 페이지 (upload, geocode, duplicate) ── */
+html.page-scroll {
+  height: auto;
+  overflow: visible;
+}
 html.page-scroll body {
-  height: auto !important;
-  overflow-y: auto !important;
+  height: auto;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: auto;
 }
 
 body {
@@ -73,29 +106,31 @@ body {
   overscroll-behavior: none;
 }
 
-/* Leaflet 다크 테마 */
-.leaflet-container {
-  background: #111820 !important;
-  font-family: var(--font-body) !important;
-}
-.leaflet-tile {
-  filter: brightness(0.6) saturate(0.4) hue-rotate(180deg);
-}
-.leaflet-control-zoom a {
-  background: var(--bg2) !important;
-  color: var(--t2) !important;
-  border-color: var(--bg5) !important;
+/* ── Leaflet 지도 ── */
+@media (prefers-color-scheme: dark) {
+  .leaflet-container {
+    background: #111820 !important;
+    font-family: var(--font-body) !important;
+  }
+  .leaflet-tile {
+    filter: brightness(0.6) saturate(0.4) hue-rotate(180deg);
+  }
+  .leaflet-control-zoom a {
+    background: var(--bg2) !important;
+    color: var(--t2) !important;
+    border-color: var(--bg5) !important;
+  }
 }
 
-/* 스크롤바 */
+/* ── 스크롤바 ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bg5); border-radius: 4px; }
 
-/* 유틸 */
+/* ── 유틸 ── */
 .hidden { display: none !important; }
 
-/* 애니메이션 */
+/* ── 애니메이션 ── */
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }

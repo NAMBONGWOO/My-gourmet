@@ -1,5 +1,5 @@
 /* =============================================
-   공통 컴포넌트
+   공통 컴포넌트 — B안 클린 쿨톤 라이트
    ============================================= */
 
 /* ── 앱 레이아웃 ── */
@@ -27,6 +27,7 @@
   align-items: center;
   padding: 14px 16px 0;
   flex-shrink: 0;
+  background: var(--bg1);
 }
 .app-bar .logo {
   font-family: var(--font-display);
@@ -40,14 +41,14 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--gold-dk);
-  border: 1.5px solid var(--gold);
+  background: var(--gold);
+  border: 1.5px solid var(--gold-dk);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
   font-weight: 500;
-  color: #1a1100;
+  color: #fff;
   cursor: pointer;
 }
 
@@ -69,7 +70,7 @@
   height: 52px;
   border-radius: 16px;
   background: var(--gold);
-  color: #1a1100;
+  color: #fff;
   border: none;
   font-size: 26px;
   font-weight: 300;
@@ -79,6 +80,7 @@
   align-items: center;
   justify-content: center;
   z-index: 30;
+  box-shadow: var(--shadow-md);
   animation: pulseGold 3s ease-in-out infinite;
   transition: transform 150ms;
 }
@@ -94,6 +96,7 @@
   padding: 8px 0 14px;
   flex-shrink: 0;
   z-index: 20;
+  box-shadow: 0 -1px 0 var(--bg4);
 }
 .tab-item {
   display: flex;
@@ -110,7 +113,7 @@
 .tab-item span { font-size: 10px; font-weight: 500; }
 .tab-item.active { color: var(--gold); }
 .tab-item.active svg {
-  filter: drop-shadow(0 0 5px rgba(201,169,110,.5));
+  filter: drop-shadow(0 0 4px rgba(201,169,110,.4));
 }
 
 /* ── 스플래시 ── */
@@ -164,6 +167,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: var(--shadow-sm);
 }
 .feature-row {
   display: flex;
@@ -185,7 +189,7 @@
   width: 100%;
   padding: 14px;
   background: var(--gold);
-  color: #1a1100;
+  color: #fff;
   border: none;
   border-radius: var(--r-md);
   font-size: 15px;
@@ -193,13 +197,14 @@
   font-family: var(--font-body);
   cursor: pointer;
   transition: opacity 150ms;
+  box-shadow: var(--shadow-sm);
 }
 .btn-gold:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-ghost {
   width: 100%;
   padding: 12px;
-  background: var(--bg3);
-  color: var(--t1);
+  background: var(--bg2);
+  color: var(--t2);
   border: 0.5px solid var(--bg5);
   border-radius: var(--r-md);
   font-size: 14px;
@@ -214,6 +219,7 @@
   border: 0.5px solid var(--bg5);
   border-radius: var(--r-md);
   padding: 16px;
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── 인풋 ── */
@@ -256,7 +262,6 @@
 .tag-chip.selected { outline: 1.5px solid var(--gold); outline-offset: 1px; }
 .tag-chip.md { padding: 5px 12px; font-size: 12px; }
 
-/* 카테고리별 색상 */
 .tag-food     { background: var(--food-bg);     color: var(--food-fg);     border-color: var(--food-bd); }
 .tag-purpose  { background: var(--purpose-bg);  color: var(--purpose-fg);  border-color: var(--purpose-bd); }
 .tag-space    { background: var(--space-bg);    color: var(--space-fg);    border-color: var(--space-bd); }
@@ -277,10 +282,10 @@
   cursor: pointer;
   transition: all 170ms;
   animation: fadeIn 220ms ease both;
+  box-shadow: var(--shadow-sm);
 }
 .rest-card:hover, .rest-card:active {
   background: var(--bg3);
-  border-color: var(--bg4);
 }
 .rest-thumb {
   width: 50px;
@@ -333,13 +338,14 @@
   border: 0.5px solid;
   transition: all 150ms;
   white-space: nowrap;
-  background: var(--bg3);
+  background: var(--bg2);
   color: var(--t3);
   border-color: var(--bg5);
+  box-shadow: var(--shadow-sm);
 }
 .filter-chip.active-all {
   background: var(--gold);
-  color: #1a1100;
+  color: #fff;
   border-color: var(--gold);
 }
 .filter-chip-dot {
@@ -367,7 +373,7 @@
   background: rgba(201,169,110,.1);
   padding: 3px 9px;
   border-radius: 8px;
-  border: 0.5px solid rgba(201,169,110,.25);
+  border: 0.5px solid rgba(201,169,110,.3);
 }
 
 /* ── 검색바 ── */
@@ -375,15 +381,16 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--bg3);
+  background: var(--bg2);
   border: 0.5px solid var(--bg5);
   border-radius: var(--r-md);
   padding: 10px 14px;
   cursor: pointer;
   margin: 12px 16px 0;
   transition: border-color 150ms;
+  box-shadow: var(--shadow-sm);
 }
-.search-bar:hover { border-color: var(--gold-dk); }
+.search-bar:hover { border-color: var(--gold); }
 .search-bar span { font-size: 14px; color: var(--t3); }
 
 /* ── 지도 영역 ── */
@@ -395,6 +402,7 @@
   border: 0.5px solid var(--bg5);
   flex-shrink: 0;
   position: relative;
+  box-shadow: var(--shadow-sm);
 }
 #map { height: 100%; width: 100%; }
 .map-badge {
@@ -402,14 +410,18 @@
   top: 10px;
   left: 10px;
   z-index: 1000;
-  background: rgba(20,20,20,.88);
+  background: rgba(255,255,255,.92);
   border: 0.5px solid var(--bg5);
   border-radius: 8px;
   padding: 4px 10px;
   font-size: 11px;
   font-weight: 500;
-  color: var(--gold);
+  color: var(--gold-dk);
   pointer-events: none;
+  box-shadow: var(--shadow-sm);
+}
+@media (prefers-color-scheme: dark) {
+  .map-badge { background: rgba(20,20,20,.88); color: var(--gold); }
 }
 
 /* ── 목록 스크롤 영역 ── */
@@ -438,7 +450,7 @@
   margin-top: 4px;
   padding: 9px 22px;
   background: var(--gold);
-  color: #1a1100;
+  color: #fff;
   border: none;
   border-radius: var(--r-md);
   font-size: 13px;
@@ -458,12 +470,12 @@
   margin: 40px auto;
 }
 
-/* ── 바텀시트 오버레이 ── */
+/* ── 바텀시트 ── */
 .sheet-overlay {
   position: absolute;
   inset: 0;
   z-index: 50;
-  background: rgba(0,0,0,.6);
+  background: rgba(0,0,0,.4);
   display: flex;
   align-items: flex-end;
 }
@@ -475,6 +487,7 @@
   max-height: 72vh;
   overflow-y: auto;
   animation: slideUpSheet 280ms var(--ease-spring);
+  box-shadow: 0 -4px 20px rgba(0,0,0,.1);
 }
 .sheet-handle {
   width: 32px;
@@ -490,15 +503,15 @@
   bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--bg3);
-  border: 0.5px solid var(--bg5);
+  background: var(--t1);
+  color: var(--bg1);
   border-radius: 10px;
   padding: 10px 18px;
   font-size: 13px;
-  color: var(--t1);
   white-space: nowrap;
   z-index: 200;
   animation: slideUp 200ms ease;
+  box-shadow: var(--shadow-md);
 }
 
 /* ── 별점 ── */
@@ -541,39 +554,22 @@
 .visit-memo { font-size: 12px; color: var(--t2); margin-top: 2px; }
 
 /* ── 태그 편집 그룹 ── */
-.tag-group-title {
-  font-size: 10px;
-  color: var(--t4);
-  margin: 0 0 5px;
-}
-.tag-group-row {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-.cat-header {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-bottom: 8px;
-}
-.cat-num-badge {
-  padding: 2px 7px;
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 500;
-  border: 0.5px solid;
-}
+.tag-group-title { font-size: 10px; color: var(--t4); margin: 0 0 5px; }
+.tag-group-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+.cat-header { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.cat-num-badge { padding: 2px 7px; border-radius: 6px; font-size: 10px; font-weight: 500; border: 0.5px solid; }
 .cat-name-label { font-size: 12px; font-weight: 500; }
 .cat-rule-badge { font-size: 10px; color: var(--t4); }
 
 /* ── 에러 박스 ── */
 .error-box {
   font-size: 12px;
-  color: #f5c4b3;
-  background: rgba(107,61,61,.3);
-  border: 0.5px solid #6b3d3d;
+  color: #c0392b;
+  background: #fdf0ef;
+  border: 0.5px solid #f5c6c6;
   border-radius: 8px;
   padding: 8px 12px;
+}
+@media (prefers-color-scheme: dark) {
+  .error-box { color: #f5c4b3; background: rgba(107,61,61,.3); border-color: #6b3d3d; }
 }
