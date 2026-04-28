@@ -206,11 +206,38 @@
       <div class="card-title">📺 방송 출처 태그 (파일에 없을 때 자동 적용)</div>
       <div class="source-grid" id="source-grid">
         <button class="source-btn" data-source="">자동 (파일 그대로)</button>
-        <button class="source-btn" data-source="source__백반기행">백반기행</button>
-        <button class="source-btn" data-source="source__생생정보통">생생정보통</button>
-        <button class="source-btn" data-source="source__생활의달인">생활의달인</button>
+
+        <div style="width:100%;font-size:10px;color:var(--t4);margin:4px 0 2px;letter-spacing:0.05em;">📺 방송</div>
+        <button class="source-btn" data-source="source__식객허영만">백반기행</button>
         <button class="source-btn" data-source="source__수요미식회">수요미식회</button>
-        <button class="source-btn" data-source="source__직접">직접 발굴</button>
+        <button class="source-btn" data-source="source__맛있는녀석들">맛있는녀석들</button>
+        <button class="source-btn" data-source="source__생활의달인">생활의달인</button>
+        <button class="source-btn" data-source="source__생생정보통">생생정보통</button>
+        <button class="source-btn" data-source="source__성시경먹을텐데">성시경먹을텐데</button>
+        <button class="source-btn" data-source="source__백종원3대천왕">백종원 3대천왕</button>
+        <button class="source-btn" data-source="source__토요일은밥이좋아">토요일은밥이좋아</button>
+        <button class="source-btn" data-source="source__줄서는식당">줄서는식당</button>
+        <button class="source-btn" data-source="source__흑백요리사">흑백요리사</button>
+
+        <div style="width:100%;font-size:10px;color:var(--t4);margin:4px 0 2px;letter-spacing:0.05em;">📕 미식 가이드</div>
+        <button class="source-btn" data-source="source__미슐랭가이드">미슐랭 가이드</button>
+        <button class="source-btn" data-source="source__미슐랭빕구르망">미슐랭 빕구르망</button>
+        <button class="source-btn" data-source="source__블루리본">블루리본</button>
+        <button class="source-btn" data-source="source__망고플레이트">망고플레이트</button>
+
+        <div style="width:100%;font-size:10px;color:var(--t4);margin:4px 0 2px;letter-spacing:0.05em;">✅ 국가/기관 인증</div>
+        <button class="source-btn" data-source="source__백년가게">백년가게</button>
+        <button class="source-btn" data-source="source__안심식당">안심식당</button>
+        <button class="source-btn" data-source="source__모범음식점">모범음식점</button>
+        <button class="source-btn" data-source="source__착한가격업소">착한가격업소</button>
+        <button class="source-btn" data-source="source__지자체맛집">지자체 선정맛집</button>
+
+        <div style="width:100%;font-size:10px;color:var(--t4);margin:4px 0 2px;letter-spacing:0.05em;">🔍 수집 출처</div>
+        <button class="source-btn" data-source="source__블로그">블로그 발굴</button>
+        <button class="source-btn" data-source="source__인스타">인스타 발굴</button>
+        <button class="source-btn" data-source="source__유튜브">유튜브 발굴</button>
+        <button class="source-btn" data-source="source__지인">지인 추천</button>
+        <button class="source-btn" data-source="source__직접">직접 발견</button>
       </div>
       <div style="font-size:11px;color:var(--t3);">
         선택 시 tag2 컬럼이 비어있는 행에 자동으로 해당 태그가 채워집니다
@@ -297,12 +324,12 @@ import { getAuth, GoogleAuthProvider,
 
 // ★ Firebase 설정값 입력 ★
 const firebaseConfig = {
-    apiKey:            "AIzaSyCMkebK6mjc9cGdykCb8uvUNNebMW4v33w",
-    authDomain:        "my-gourmet-5cf8c.firebaseapp.com",
-    projectId:         "my-gourmet-5cf8c",
-    storageBucket:     "my-gourmet-5cf8c.firebasestorage.app",
-    messagingSenderId: "696974063978",
-    appId:             "1:696974063978:web:b86a0f4aef907517c18d13"
+  apiKey:            "여기에_API_KEY",
+  authDomain:        "여기에_AUTH_DOMAIN",
+  projectId:         "여기에_PROJECT_ID",
+  storageBucket:     "여기에_STORAGE_BUCKET",
+  messagingSenderId: "여기에_SENDER_ID",
+  appId:             "여기에_APP_ID"
 }
 
 const app  = initializeApp(firebaseConfig)
