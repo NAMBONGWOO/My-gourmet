@@ -24,11 +24,6 @@ const signInWithPopup    = window.signInWithPopup
 const signOut            = window.signOut
 
 const COL = 'restaurants'
-const {
-  onAuthStateChanged, signInWithPopup, signOut,
-} = window.firebaseAuth ?? await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')
-
-const COL = 'restaurants'
 
 /* ══════════════════════════════════════════
    상태 (State)
