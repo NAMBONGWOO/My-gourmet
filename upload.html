@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#141414" />
+  <title>MGA — 데이터 업로드</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <style>
+    body { background: var(--bg0); color: var(--t1); min-height: 100vh; padding: 40px 20px; overflow-y: auto; }
+
+    .container { max-width: 760px; margin: 0 auto; }
+
+    .page-header { margin-bottom: 32px; }
+    .page-logo { font-family: var(--font-display); font-size: 24px; color: var(--t1); margin-bottom: 6px; }
+    .page-logo span { color: var(--gold); }
+    .page-title { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+    .page-sub { font-size: 13px; color: var(--t3); }
+
+    .card { background: var(--bg2); border: 0.5px solid var(--bg5); border-radius: var(--r-md); padding: 20px; margin-bottom: 16px; }
+    .card-title { font-size: 13px; font-weight: 500; color: var(--t2); margin-bottom: 14px; letter-spacing: 0.04em; }
+
+    /* 로그인 */
+    #login-area { text-align: center; padding: 60px 20px; }
+    .btn-google { display: inline-flex; align-items: center; gap: 10px; padding: 13px 28px; background: var(--gold); color: #1a1100; border: none; border-radius: var(--r-md); font-size: 15px; font-weight: 500; font-family: var(--font-body); cursor: pointer; }
+
+    /* 업로드 존 */
+    .drop-zone {
+      border: 1.5px dashed var(--bg5);
+      border-radius: var(--r-md);
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 200ms;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--gold);
+      background: rgba(201,169,110,.05);
+    }
+    .drop-zone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    }
+    .drop-icon { font-size: 36px; margin-bottom: 10px; }
+    .drop-text { font-size: 14px; color: var(--t2); margin-bottom: 4px; }
+    .drop-sub  { font-size: 12px; color: var(--t3); }
+
+    /* 소스 선택 */
+    .source-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .source-btn {
+      padding: 6px 14px; border-radius: var(--r-pill);
+      font-size: 12px; font-weight: 500; font-family: var(--font-body);
+      cursor: pointer; border: 0.5px solid;
+      transition: all 150ms;
+      background: var(--bg3); color: var(--t3); border-color: var(--bg5);
+    }
+    .source-btn.active {
+      background: var(--source-bg); color: var(--source-fg); border-color: var(--source-bd);
+    }
+
+    /* 미리보기 테이블 */
+    .preview-wrap { overflow-x: auto; margin-top: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: var(--bg3); color: var(--t3); padding: 8px 10px; text-align: left; font-weight: 500; border-bottom: 0.5px solid var(--bg5); white-space: nowrap; }
+    td { padding: 7px 10px; border-bottom: 0.5px solid var(--bg4); color: var(--t2); white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+    tr:hover td { background: var(--bg3); }
+
+    /* 태그 칩 */
+    .chip {
+      display: inline-block; padding: 2px 8px; border-radius: 12px;
+      font-size: 10px; font-weight: 500; border: 0.5px solid;
+    }
+    .chip-food     { background:var(--food-bg);     color:var(--food-fg);     border-color:var(--food-bd); }
+    .chip-purpose  { background:var(--purpose-bg);  color:var(--purpose-fg);  border-color:var(--purpose-bd); }
+    .chip-source   { background:var(--source-bg);   color:var(--source-fg);   border-color:var(--source-bd); }
+    .chip-status   { background:var(--status-bg);   color:var(--status-fg);   border-color:var(--status-bd); }
+    .chip-cafe     { background:var(--purpose-bg);  color:var(--purpose-fg);  border-color:var(--purpose-bd); }
+
+    /* 진행 상태 */
+    .progress-bar-wrap { background: var(--bg3); border-radius: 8px; height: 8px; overflow: hidden; margin: 10px 0; }
+    .progress-bar { height: 100%; background: var(--gold); border-radius: 8px; transition: width 200ms; width: 0%; }
+
+    .stat-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; }
+    .stat-item { font-size: 12px; color: var(--t3); }
+    .stat-item strong { color: var(--gold); font-size: 15px; }
+
+    /* 로그 */
+    .log-box {
+      background: var(--bg0); border: 0.5px solid var(--bg5);
+      border-radius: var(--r-sm); padding: 12px;
+      height: 180px; overflow-y: auto;
+      font-size: 11px; font-family: monospace;
+      color: var(--t3);
+    }
+    .log-ok   { color: #9fe1cb; }
+    .log-err  { color: #f5c4b3; }
+    .log-info { color: var(--gold); }
+
+    /* 버튼 */
+    .btn-gold {
+      padding: 12px 28px; background: var(--gold); color: #1a1100;
+      border: none; border-radius: var(--r-md); font-size: 14px;
+      font-weight: 500; font-family: var(--font-body); cursor: pointer;
+      transition: opacity 150ms;
+    }
+    .btn-gold:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-ghost {
+      padding: 12px 20px; background: var(--bg3); color: var(--t2);
+      border: 0.5px solid var(--bg5); border-radius: var(--r-md);
+      font-size: 14px; font-weight: 500; font-family: var(--font-body);
+      cursor: pointer; margin-left: 8px;
+    }
+
+    .badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: 8px; font-size: 11px; font-weight: 500;
+    }
+    .badge-gold { background: rgba(201,169,110,.15); color: var(--gold); border: 0.5px solid rgba(201,169,110,.3); }
+    .badge-green { background: rgba(61,107,92,.3); color: #9fe1cb; border: 0.5px solid #3d6b5c; }
+    .badge-red { background: rgba(107,61,61,.3); color: #f5c4b3; border: 0.5px solid #6b3d3d; }
+
+    .info-box {
+      background: rgba(201,169,110,.07); border: 0.5px solid rgba(201,169,110,.2);
+      border-radius: var(--r-sm); padding: 10px 14px;
+      font-size: 12px; color: var(--t2); line-height: 1.7;
+    }
+    .info-box code {
+      background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+      font-size: 11px; color: var(--gold);
+    }
+
+    .divider { height: 0.5px; background: var(--bg5); margin: 20px 0; }
+    .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    /* 링크 */
+    a.back-link {
+      color: var(--t3); font-size: 13px; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    a.back-link:hover { color: var(--gold); }
+
+    /* 반응형 */
+    @media (max-width: 500px) {
+      body { padding: 20px 12px; }
+      th, td { padding: 6px 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- 헤더 -->
+  <div class="page-header">
+    <div class="page-logo">My Gourmet<span>.</span></div>
+    <div class="page-title">데이터 일괄 업로드</div>
+    <div class="page-sub">CSV 파일로 맛집 데이터를 한 번에 Firestore에 저장합니다</div>
+  </div>
+
+  <!-- 로그인 전 -->
+  <div id="login-area">
+    <div style="font-size:13px;color:var(--t3);margin-bottom:20px;">
+      업로드하려면 먼저 로그인하세요
+    </div>
+    <button class="btn-google" id="btn-login">
+      Google로 로그인
+    </button>
+  </div>
+
+  <!-- 로그인 후 메인 -->
+  <div id="main-area" style="display:none;">
+
+    <!-- 사용자 정보 -->
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;">
+      <div>
+        <span id="user-name" style="font-size:14px;font-weight:500;"></span>
+        <span style="font-size:12px;color:var(--t3);margin-left:8px;" id="user-email"></span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="badge badge-gold" id="total-count-badge">DB: 0개</span>
+        <button class="btn-ghost" style="padding:6px 14px;font-size:12px;" id="btn-logout">로그아웃</button>
+        <a href="index.html" class="back-link">← 앱으로</a>
+      </div>
+    </div>
+
+    <!-- CSV 형식 안내 -->
+    <div class="card">
+      <div class="card-title">📋 CSV 컬럼 형식</div>
+      <div class="info-box">
+        필수: <code>name</code> (상호명) &nbsp;|&nbsp;
+        선택: <code>address</code> <code>shortAddr</code> <code>phone</code>
+              <code>hours</code> <code>memo</code>
+              <code>tag1</code> <code>tag2</code> <code>tag3</code> <code>tag4</code>
+              <code>broadcast_program</code> <code>broadcast_date</code><br><br>
+        태그 예시: <code>food__한식</code> &nbsp;<code>source__백반기행</code>
+                   &nbsp;<code>status__가볼곳</code> &nbsp;<code>purpose__데이트</code><br>
+        인코딩: <code>UTF-8 BOM</code> (Excel 저장 시 자동) &nbsp;|&nbsp;
+        최대: <code>1,000행 / 1회</code>
+      </div>
+    </div>
+
+    <!-- 방송 출처 선택 -->
+    <div class="card">
+      <div class="card-title">📺 방송 출처 태그 (파일에 없을 때 자동 적용)</div>
+      <div class="source-grid" id="source-grid">
+        <button class="source-btn" data-source="">자동 (파일 그대로)</button>
+        <button class="source-btn" data-source="source__백반기행">백반기행</button>
+        <button class="source-btn" data-source="source__생생정보통">생생정보통</button>
+        <button class="source-btn" data-source="source__생활의달인">생활의달인</button>
+        <button class="source-btn" data-source="source__수요미식회">수요미식회</button>
+        <button class="source-btn" data-source="source__직접">직접 발굴</button>
+      </div>
+      <div style="font-size:11px;color:var(--t3);">
+        선택 시 tag2 컬럼이 비어있는 행에 자동으로 해당 태그가 채워집니다
+      </div>
+    </div>
+
+    <!-- 파일 업로드 -->
+    <div class="card">
+      <div class="card-title">📂 CSV 파일 선택</div>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept=".csv" />
+        <div class="drop-icon">📄</div>
+        <div class="drop-text">CSV 파일을 여기에 드래그하거나 클릭하여 선택</div>
+        <div class="drop-sub">UTF-8 BOM 인코딩 권장 · 최대 1,000행</div>
+      </div>
+    </div>
+
+    <!-- 미리보기 -->
+    <div class="card" id="preview-card" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin:0;">👀 미리보기 (상위 10행)</div>
+        <div class="flex-row">
+          <span class="badge badge-gold" id="preview-total">0개 인식</span>
+          <span class="badge badge-red" id="preview-dup">중복 0개</span>
+        </div>
+      </div>
+      <div class="preview-wrap">
+        <table id="preview-table">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="flex-row">
+        <button class="btn-gold" id="btn-upload">🚀 Firestore에 업로드</button>
+        <button class="btn-ghost" id="btn-reset">다시 선택</button>
+        <span style="font-size:12px;color:var(--t3);" id="upload-hint"></span>
+      </div>
+    </div>
+
+    <!-- 업로드 진행 -->
+    <div class="card" id="progress-card" style="display:none;">
+      <div class="card-title">⏳ 업로드 진행 중</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-item">완료 <strong id="stat-done">0</strong>개</div>
+        <div class="stat-item">오류 <strong id="stat-err">0</strong>개</div>
+        <div class="stat-item">전체 <strong id="stat-total">0</strong>개</div>
+        <div class="stat-item" id="stat-speed"></div>
+      </div>
+      <div class="log-box" id="log-box" style="margin-top:12px;"></div>
+    </div>
+
+    <!-- 완료 -->
+    <div class="card" id="done-card" style="display:none;">
+      <div style="text-align:center;padding:20px 0;">
+        <div style="font-size:36px;margin-bottom:10px;">🎉</div>
+        <div style="font-size:16px;font-weight:500;margin-bottom:6px;">업로드 완료!</div>
+        <div style="font-size:13px;color:var(--t3);margin-bottom:20px;" id="done-msg"></div>
+        <div class="flex-row" style="justify-content:center;">
+          <a href="index.html"><button class="btn-gold">앱에서 확인하기 →</button></a>
+          <button class="btn-ghost" id="btn-more">추가 업로드</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#main-area -->
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp }              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
+import { getFirestore,
+         collection, addDoc, getDocs,
+         query, where,
+         serverTimestamp }            from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
+import { getAuth, GoogleAuthProvider,
+         onAuthStateChanged,
+         signInWithPopup, signOut }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+
+// ★ Firebase 설정값 입력 ★
+const firebaseConfig = {
+    apiKey:            "AIzaSyCMkebK6mjc9cGdykCb8uvUNNebMW4v33w",
+    authDomain:        "my-gourmet-5cf8c.firebaseapp.com",
+    projectId:         "my-gourmet-5cf8c",
+    storageBucket:     "my-gourmet-5cf8c.firebasestorage.app",
+    messagingSenderId: "696974063978",
+    appId:             "1:696974063978:web:b86a0f4aef907517c18d13"
+}
+
+const app  = initializeApp(firebaseConfig)
+const db   = getFirestore(app)
+const auth = getAuth(app)
+const provider = new GoogleAuthProvider()
+
+// ── 상태 ──
+let currentUser   = null
+let parsedRows    = []
+let existingNames = new Set()
+let selectedSource = ''
+
+// ── DOM ──
+const loginArea   = document.getElementById('login-area')
+const mainArea    = document.getElementById('main-area')
+const btnLogin    = document.getElementById('btn-login')
+const btnLogout   = document.getElementById('btn-logout')
+const fileInput   = document.getElementById('file-input')
+const dropZone    = document.getElementById('drop-zone')
+const previewCard = document.getElementById('preview-card')
+const progressCard= document.getElementById('progress-card')
+const doneCard    = document.getElementById('done-card')
+const btnUpload   = document.getElementById('btn-upload')
+const btnReset    = document.getElementById('btn-reset')
+const btnMore     = document.getElementById('btn-more')
+const logBox      = document.getElementById('log-box')
+const progressBar = document.getElementById('progress-bar')
+
+// ── 인증 ──
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    currentUser = user
+    loginArea.style.display = 'none'
+    mainArea.style.display  = 'block'
+    document.getElementById('user-name').textContent  = user.displayName ?? ''
+    document.getElementById('user-email').textContent = user.email ?? ''
+    await loadExistingNames()
+  } else {
+    currentUser = null
+    loginArea.style.display = 'block'
+    mainArea.style.display  = 'none'
+  }
+})
+
+btnLogin.onclick  = () => signInWithPopup(auth, provider)
+btnLogout.onclick = () => signOut(auth)
+
+// ── 기존 데이터 로드 ──
+async function loadExistingNames() {
+  existingNames.clear()
+  const snap = await getDocs(
+    query(collection(db, 'restaurants'), where('userId','==', currentUser.uid))
+  )
+  snap.docs.forEach(d => {
+    const n = (d.data().name ?? '').replace(/[\s\(\)\.\-]/g,'').toLowerCase()
+    existingNames.add(n)
+  })
+  document.getElementById('total-count-badge').textContent = `DB: ${snap.size}개`
+  log(`기존 DB ${snap.size}개 로드 완료`, 'info')
+}
+
+// ── 방송 출처 선택 ──
+document.getElementById('source-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.source-btn')
+  if (!btn) return
+  document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  selectedSource = btn.dataset.source
+})
+document.querySelector('.source-btn[data-source=""]').classList.add('active')
+
+// ── 드래그앤드롭 ──
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over') })
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'))
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over')
+  const file = e.dataTransfer.files[0]
+  if (file) handleFile(file)
+})
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) handleFile(fileInput.files[0])
+})
+
+// ── CSV 파싱 ──
+function handleFile(file) {
+  const reader = new FileReader()
+  reader.onload = e => {
+    let text = e.target.result
+    // BOM 제거
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1)
+    parsedRows = parseCSV(text)
+    renderPreview(parsedRows)
+  }
+  reader.readAsText(file, 'UTF-8')
+}
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim())
+  if (!lines.length) return []
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''))
+  const rows = []
+  for (let i = 1; i < lines.length; i++) {
+    const vals = splitCSVLine(lines[i])
+    if (vals.every(v => !v.trim())) continue
+    const obj = {}
+    headers.forEach((h, idx) => { obj[h] = (vals[idx] ?? '').trim() })
+    if (!obj.name) continue
+    rows.push(obj)
+  }
+  return rows
+}
+
+function splitCSVLine(line) {
+  const result = []; let cur = ''; let inQ = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (ch === '"') { inQ = !inQ }
+    else if (ch === ',' && !inQ) { result.push(cur); cur = '' }
+    else { cur += ch }
+  }
+  result.push(cur)
+  return result
+}
+
+// ── 미리보기 렌더 ──
+function renderPreview(rows) {
+  if (!rows.length) { alert('데이터가 없습니다'); return }
+
+  // 중복 체크
+  let dupCount = 0
+  rows.forEach(r => {
+    const key = (r.name ?? '').replace(/[\s\(\)\.\-]/g,'').toLowerCase()
+    r._isDup = existingNames.has(key)
+    if (r._isDup) dupCount++
+  })
+
+  document.getElementById('preview-total').textContent = `${rows.length}개 인식`
+  document.getElementById('preview-dup').textContent   = `중복 ${dupCount}개`
+  document.getElementById('upload-hint').textContent   =
+    `중복 제외 ${rows.length - dupCount}개 업로드 예정`
+
+  const preview = rows.slice(0, 10)
+  const cols = ['name','shortAddr','memo','tag1','tag2','tag3']
+
+  const thead = document.querySelector('#preview-table thead')
+  const tbody = document.querySelector('#preview-table tbody')
+  thead.innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join('')}<th>상태</th></tr>`
+  tbody.innerHTML = preview.map(r => `
+    <tr style="${r._isDup ? 'opacity:.4' : ''}">
+      ${cols.map(c => `<td title="${r[c]??''}">${renderCell(c, r[c]??'')}</td>`).join('')}
+      <td>${r._isDup
+        ? '<span class="badge badge-red">중복</span>'
+        : '<span class="badge badge-green">신규</span>'}</td>
+    </tr>`).join('')
+
+  previewCard.style.display  = 'block'
+  progressCard.style.display = 'none'
+  doneCard.style.display     = 'none'
+  logBox.innerHTML           = ''
+}
+
+function renderCell(col, val) {
+  if (!val) return '<span style="color:var(--t4)">—</span>'
+  if (col.startsWith('tag')) {
+    const cat = val.split('__')[0]
+    const cls = { food:'chip-food', source:'chip-source',
+                  status:'chip-status', purpose:'chip-purpose',
+                  space:'chip-food', facility:'chip-status' }[cat] ?? ''
+    const label = val.split('__')[1] ?? val
+    return `<span class="chip ${cls}">${label}</span>`
+  }
+  return `<span title="${val}">${val.length > 20 ? val.slice(0,20)+'…' : val}</span>`
+}
+
+// ── 업로드 ──
+btnUpload.onclick = async () => {
+  if (!currentUser) { alert('로그인이 필요합니다'); return }
+
+  const toUpload = parsedRows.filter(r => !r._isDup)
+  if (!toUpload.length) { alert('업로드할 신규 데이터가 없습니다'); return }
+
+  btnUpload.disabled = true
+  previewCard.style.display  = 'none'
+  progressCard.style.display = 'block'
+  doneCard.style.display     = 'none'
+
+  let done = 0, err = 0
+  const total = toUpload.length
+  const startTime = Date.now()
+
+  document.getElementById('stat-total').textContent = total
+
+  log(`업로드 시작: ${total}개`, 'info')
+
+  // 배치 처리 (5개씩)
+  const BATCH = 5
+  for (let i = 0; i < toUpload.length; i += BATCH) {
+    const chunk = toUpload.slice(i, i + BATCH)
+    await Promise.all(chunk.map(async r => {
+      try {
+        // 태그 수집
+        const tagIds = []
+        ;['tag1','tag2','tag3','tag4'].forEach(k => {
+          if (r[k]) tagIds.push(r[k])
+        })
+        // 출처 태그 자동 삽입
+        if (selectedSource && !tagIds.includes(selectedSource)) {
+          if (!tagIds.some(t => t.startsWith('source__'))) {
+            tagIds.splice(1, 0, selectedSource)
+          }
+        }
+
+        await addDoc(collection(db, 'restaurants'), {
+          userId:    currentUser.uid,
+          name:      r.name       ?? '',
+          address:   r.address    ?? '',
+          shortAddr: r.shortAddr  ?? '',
+          phone:     r.phone      ?? '',
+          hours:     r.hours      ?? '',
+          memo:      r.memo       ?? '',
+          tagIds,
+          rating:    null,
+          visitLog:  [],
+          photos:    [],
+          source:    r.broadcast_program ?? 'csv',
+          broadcast: r.broadcast_program ? {
+            program: r.broadcast_program,
+            date:    r.broadcast_date ?? '',
+            episode: ''
+          } : null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+        done++
+        log(`✓ ${r.name}`, 'ok')
+      } catch(e) {
+        err++
+        log(`✗ ${r.name}: ${e.message}`, 'err')
+      }
+
+      // UI 업데이트
+      const pct = Math.round((done + err) / total * 100)
+      progressBar.style.width = pct + '%'
+      document.getElementById('stat-done').textContent = done
+      document.getElementById('stat-err').textContent  = err
+      const elapsed = (Date.now() - startTime) / 1000
+      const speed   = Math.round((done + err) / elapsed)
+      document.getElementById('stat-speed').textContent = `약 ${speed}개/초`
+      logBox.scrollTop = logBox.scrollHeight
+    }))
+  }
+
+  // 완료
+  progressCard.style.display = 'none'
+  doneCard.style.display     = 'block'
+  document.getElementById('done-msg').textContent =
+    `${done}개 저장 완료 · ${err}개 오류 · 총 ${total}개 처리`
+
+  log(`완료! ${done}/${total}`, 'info')
+  await loadExistingNames()
+  btnUpload.disabled = false
+}
+
+btnReset.onclick = () => {
+  parsedRows = []
+  fileInput.value = ''
+  previewCard.style.display  = 'none'
+  progressCard.style.display = 'none'
+  doneCard.style.display     = 'none'
+}
+
+btnMore.onclick = () => {
+  parsedRows = []
+  fileInput.value = ''
+  previewCard.style.display  = 'none'
+  progressCard.style.display = 'none'
+  doneCard.style.display     = 'none'
+}
+
+function log(msg, type = '') {
+  const div = document.createElement('div')
+  div.className = type ? `log-${type}` : ''
+  div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`
+  logBox.appendChild(div)
+  logBox.scrollTop = logBox.scrollHeight
+}
+</script>
+</body>
+</html>
