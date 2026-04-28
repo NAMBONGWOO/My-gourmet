@@ -6,15 +6,15 @@
 /* ══════════════════════════════════════════
    Firestore 헬퍼
 ══════════════════════════════════════════ */
-const {
-  collection, query, where, orderBy, onSnapshot,
-  addDoc, updateDoc, deleteDoc, doc,
-  serverTimestamp, arrayUnion, arrayRemove,
-} = window.firestore ?? await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
+// Firebase 함수는 index.html에서 window.*로 주입됨
+const { collection, query, where, orderBy,
+        onSnapshot, addDoc, updateDoc, deleteDoc,
+        serverTimestamp, arrayUnion, arrayRemove } = window
 
-const {
-  onAuthStateChanged, signInWithPopup, signOut,
-} = window.firebaseAuth ?? await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')
+const doc              = window.firestoreDoc
+const onAuthStateChanged = window.onAuthStateChanged
+const signInWithPopup  = window.signInWithPopup
+const signOut          = window.signOut
 
 const COL = 'restaurants'
 
