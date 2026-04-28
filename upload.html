@@ -244,6 +244,60 @@
       </div>
     </div>
 
+    <!-- 업로드 모드 선택 -->
+    <div class="card">
+      <div class="card-title">⚙️ 업로드 모드 선택</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <button id="mode-insert" data-mode="insert"
+          style="flex:1;padding:14px;border-radius:var(--r-md);
+                 border:1.5px solid var(--gold);
+                 background:rgba(201,169,110,.1);color:var(--gold);
+                 font-size:13px;font-weight:500;font-family:var(--font-body);cursor:pointer;">
+          ➕ 신규 추가 모드<br>
+          <span style="font-size:11px;font-weight:400;color:var(--t3);margin-top:4px;display:block;">
+            중복 제외하고 새 데이터만 추가
+          </span>
+        </button>
+        <button id="mode-update" data-mode="update"
+          style="flex:1;padding:14px;border-radius:var(--r-md);
+                 border:0.5px solid var(--bg5);
+                 background:var(--bg3);color:var(--t2);
+                 font-size:13px;font-weight:500;font-family:var(--font-body);cursor:pointer;">
+          ✏️ 업데이트 모드<br>
+          <span style="font-size:11px;font-weight:400;color:var(--t3);margin-top:4px;display:block;">
+            같은 이름이면 빈 필드만 채워서 업데이트
+          </span>
+        </button>
+      </div>
+      <div id="update-options" style="display:none;background:var(--bg3);
+           border-radius:var(--r-sm);padding:12px;">
+        <div style="font-size:12px;font-weight:500;color:var(--gold);margin-bottom:8px;">
+          업데이트할 필드 선택
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--t2);">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+            <input type="checkbox" id="upd-address" checked style="accent-color:var(--gold);">주소
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+            <input type="checkbox" id="upd-phone" checked style="accent-color:var(--gold);">전화번호
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+            <input type="checkbox" id="upd-hours" checked style="accent-color:var(--gold);">영업시간
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+            <input type="checkbox" id="upd-memo" style="accent-color:var(--gold);">메모
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+            <input type="checkbox" id="upd-tags" style="accent-color:var(--gold);">태그 추가
+          </label>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--t3);">
+          ※ 체크된 필드 중 <strong style="color:var(--t2);">현재 비어있는 것만</strong> 채웁니다.
+          이미 값이 있으면 덮어쓰지 않습니다.
+        </div>
+      </div>
+    </div>
+
     <!-- 파일 업로드 -->
     <div class="card">
       <div class="card-title">📂 CSV 파일 선택</div>
@@ -312,15 +366,17 @@
 </div>
 
 <!-- Firebase SDK -->
+
+<!-- Firebase SDK -->
 <script type="module">
-import { initializeApp }              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
 import { getFirestore,
-         collection, addDoc, getDocs,
-         query, where,
-         serverTimestamp }            from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
+         collection, addDoc, getDocs, updateDoc, doc,
+         query, where, arrayUnion,
+         serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
 import { getAuth, GoogleAuthProvider,
          onAuthStateChanged,
-         signInWithPopup, signOut }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+         signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
 
 // ★ Firebase 설정값 입력 ★
 const firebaseConfig = {
@@ -338,26 +394,31 @@ const auth = getAuth(app)
 const provider = new GoogleAuthProvider()
 
 // ── 상태 ──
-let currentUser   = null
-let parsedRows    = []
-let existingNames = new Set()
+let currentUser    = null
+let parsedRows     = []
+let existingMap    = {}   // nameKey → { id, data }
+let existingNames  = new Set()
 let selectedSource = ''
+let uploadMode     = 'insert'  // 'insert' | 'update'
 
 // ── DOM ──
-const loginArea   = document.getElementById('login-area')
-const mainArea    = document.getElementById('main-area')
-const btnLogin    = document.getElementById('btn-login')
-const btnLogout   = document.getElementById('btn-logout')
-const fileInput   = document.getElementById('file-input')
-const dropZone    = document.getElementById('drop-zone')
-const previewCard = document.getElementById('preview-card')
-const progressCard= document.getElementById('progress-card')
-const doneCard    = document.getElementById('done-card')
-const btnUpload   = document.getElementById('btn-upload')
-const btnReset    = document.getElementById('btn-reset')
-const btnMore     = document.getElementById('btn-more')
-const logBox      = document.getElementById('log-box')
-const progressBar = document.getElementById('progress-bar')
+const loginArea    = document.getElementById('login-area')
+const mainArea     = document.getElementById('main-area')
+const btnLogin     = document.getElementById('btn-login')
+const btnLogout    = document.getElementById('btn-logout')
+const fileInput    = document.getElementById('file-input')
+const dropZone     = document.getElementById('drop-zone')
+const previewCard  = document.getElementById('preview-card')
+const progressCard = document.getElementById('progress-card')
+const doneCard     = document.getElementById('done-card')
+const btnUpload    = document.getElementById('btn-upload')
+const btnReset     = document.getElementById('btn-reset')
+const btnMore      = document.getElementById('btn-more')
+const logBox       = document.getElementById('log-box')
+const progressBar  = document.getElementById('progress-bar')
+const modeInsert   = document.getElementById('mode-insert')
+const modeUpdate   = document.getElementById('mode-update')
+const updateOpts   = document.getElementById('update-options')
 
 // ── 인증 ──
 onAuthStateChanged(auth, async user => {
@@ -367,29 +428,61 @@ onAuthStateChanged(auth, async user => {
     mainArea.style.display  = 'block'
     document.getElementById('user-name').textContent  = user.displayName ?? ''
     document.getElementById('user-email').textContent = user.email ?? ''
-    await loadExistingNames()
+    await loadExistingData()
   } else {
     currentUser = null
     loginArea.style.display = 'block'
     mainArea.style.display  = 'none'
   }
 })
-
 btnLogin.onclick  = () => signInWithPopup(auth, provider)
 btnLogout.onclick = () => signOut(auth)
 
+// ── 모드 선택 ──
+modeInsert.addEventListener('click', () => {
+  uploadMode = 'insert'
+  modeInsert.style.border    = '1.5px solid var(--gold)'
+  modeInsert.style.background= 'rgba(201,169,110,.1)'
+  modeInsert.style.color     = 'var(--gold)'
+  modeUpdate.style.border    = '0.5px solid var(--bg5)'
+  modeUpdate.style.background= 'var(--bg3)'
+  modeUpdate.style.color     = 'var(--t2)'
+  updateOpts.style.display   = 'none'
+  if (parsedRows.length) renderPreview(parsedRows)
+})
+
+modeUpdate.addEventListener('click', () => {
+  uploadMode = 'update'
+  modeUpdate.style.border    = '1.5px solid var(--gold)'
+  modeUpdate.style.background= 'rgba(201,169,110,.1)'
+  modeUpdate.style.color     = 'var(--gold)'
+  modeInsert.style.border    = '0.5px solid var(--bg5)'
+  modeInsert.style.background= 'var(--bg3)'
+  modeInsert.style.color     = 'var(--t2)'
+  updateOpts.style.display   = 'block'
+  if (parsedRows.length) renderPreview(parsedRows)
+})
+
 // ── 기존 데이터 로드 ──
-async function loadExistingNames() {
-  existingNames.clear()
+async function loadExistingData() {
+  existingMap   = {}
+  existingNames = new Set()
+
   const snap = await getDocs(
     query(collection(db, 'restaurants'), where('userId','==', currentUser.uid))
   )
   snap.docs.forEach(d => {
-    const n = (d.data().name ?? '').replace(/[\s\(\)\.\-]/g,'').toLowerCase()
-    existingNames.add(n)
+    const data = d.data()
+    const key  = nameKey(data.name)
+    existingNames.add(key)
+    existingMap[key] = { id: d.id, data }
   })
   document.getElementById('total-count-badge').textContent = `DB: ${snap.size}개`
   log(`기존 DB ${snap.size}개 로드 완료`, 'info')
+}
+
+function nameKey(name) {
+  return (name ?? '').replace(/[\s\(\)\.\-]/g,'').toLowerCase()
 }
 
 // ── 방송 출처 선택 ──
@@ -419,7 +512,6 @@ function handleFile(file) {
   const reader = new FileReader()
   reader.onload = e => {
     let text = e.target.result
-    // BOM 제거
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1)
     parsedRows = parseCSV(text)
     renderPreview(parsedRows)
@@ -459,32 +551,62 @@ function splitCSVLine(line) {
 function renderPreview(rows) {
   if (!rows.length) { alert('데이터가 없습니다'); return }
 
-  // 중복 체크
-  let dupCount = 0
+  let newCount = 0, dupCount = 0, updCount = 0
+
   rows.forEach(r => {
-    const key = (r.name ?? '').replace(/[\s\(\)\.\-]/g,'').toLowerCase()
+    const key = nameKey(r.name)
     r._isDup = existingNames.has(key)
-    if (r._isDup) dupCount++
+    if (r._isDup) {
+      dupCount++
+      // 업데이트 모드에서 업데이트 가능 여부 확인
+      const exist = existingMap[key]?.data ?? {}
+      r._canUpdate = (
+        (document.getElementById('upd-address').checked && !exist.address && r.address) ||
+        (document.getElementById('upd-phone').checked   && !exist.phone   && r.phone)   ||
+        (document.getElementById('upd-hours').checked   && !exist.hours   && r.hours)   ||
+        (document.getElementById('upd-memo').checked    && !exist.memo    && r.memo)     ||
+        (document.getElementById('upd-tags').checked    && r.tag1)
+      )
+      if (uploadMode === 'update' && r._canUpdate) updCount++
+    } else {
+      newCount++
+    }
   })
 
   document.getElementById('preview-total').textContent = `${rows.length}개 인식`
-  document.getElementById('preview-dup').textContent   = `중복 ${dupCount}개`
-  document.getElementById('upload-hint').textContent   =
-    `중복 제외 ${rows.length - dupCount}개 업로드 예정`
+
+  if (uploadMode === 'insert') {
+    document.getElementById('preview-dup').textContent  = `중복 ${dupCount}개`
+    document.getElementById('upload-hint').textContent  = `신규 ${newCount}개 업로드 예정`
+    document.getElementById('btn-upload').textContent   = `🚀 ${newCount}개 신규 추가`
+  } else {
+    document.getElementById('preview-dup').textContent  = `업데이트 가능 ${updCount}개`
+    document.getElementById('upload-hint').textContent  = `중복 ${dupCount}개 중 빈 필드 업데이트`
+    document.getElementById('btn-upload').textContent   = `✏️ ${updCount}개 업데이트`
+  }
 
   const preview = rows.slice(0, 10)
-  const cols = ['name','shortAddr','memo','tag1','tag2','tag3']
+  const cols = ['name','shortAddr','address','phone','tag1','tag2']
 
   const thead = document.querySelector('#preview-table thead')
   const tbody = document.querySelector('#preview-table tbody')
   thead.innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join('')}<th>상태</th></tr>`
-  tbody.innerHTML = preview.map(r => `
-    <tr style="${r._isDup ? 'opacity:.4' : ''}">
-      ${cols.map(c => `<td title="${r[c]??''}">${renderCell(c, r[c]??'')}</td>`).join('')}
-      <td>${r._isDup
-        ? '<span class="badge badge-red">중복</span>'
-        : '<span class="badge badge-green">신규</span>'}</td>
-    </tr>`).join('')
+  tbody.innerHTML = preview.map(r => {
+    let statusBadge = ''
+    if (!r._isDup) {
+      statusBadge = '<span class="badge badge-green">신규</span>'
+    } else if (uploadMode === 'update' && r._canUpdate) {
+      statusBadge = '<span class="badge badge-gold">업데이트</span>'
+    } else {
+      statusBadge = '<span class="badge badge-red">건너뜀</span>'
+    }
+    const dim = r._isDup && !(uploadMode === 'update' && r._canUpdate)
+    return `
+      <tr style="${dim ? 'opacity:.35' : ''}">
+        ${cols.map(c => `<td title="${r[c]??''}">${renderCell(c, r[c]??'')}</td>`).join('')}
+        <td>${statusBadge}</td>
+      </tr>`
+  }).join('')
 
   previewCard.style.display  = 'block'
   progressCard.style.display = 'none'
@@ -495,120 +617,174 @@ function renderPreview(rows) {
 function renderCell(col, val) {
   if (!val) return '<span style="color:var(--t4)">—</span>'
   if (col.startsWith('tag')) {
-    const cat = val.split('__')[0]
-    const cls = { food:'chip-food', source:'chip-source',
-                  status:'chip-status', purpose:'chip-purpose',
-                  space:'chip-food', facility:'chip-status' }[cat] ?? ''
+    const cat   = val.split('__')[0]
     const label = val.split('__')[1] ?? val
+    const cls   = {food:'chip-food',source:'chip-source',
+                   status:'chip-status',purpose:'chip-purpose',
+                   space:'chip-food',facility:'chip-status'}[cat] ?? ''
     return `<span class="chip ${cls}">${label}</span>`
   }
-  return `<span title="${val}">${val.length > 20 ? val.slice(0,20)+'…' : val}</span>`
+  return `<span title="${val}">${val.length > 22 ? val.slice(0,22)+'…' : val}</span>`
 }
 
-// ── 업로드 ──
+// ── 업데이트 옵션 변경시 미리보기 갱신 ──
+document.querySelectorAll('#update-options input[type=checkbox]').forEach(chk => {
+  chk.addEventListener('change', () => { if (parsedRows.length) renderPreview(parsedRows) })
+})
+
+// ── 업로드 / 업데이트 실행 ──
 btnUpload.onclick = async () => {
   if (!currentUser) { alert('로그인이 필요합니다'); return }
-
-  const toUpload = parsedRows.filter(r => !r._isDup)
-  if (!toUpload.length) { alert('업로드할 신규 데이터가 없습니다'); return }
-
   btnUpload.disabled = true
   previewCard.style.display  = 'none'
   progressCard.style.display = 'block'
   doneCard.style.display     = 'none'
 
   let done = 0, err = 0
-  const total = toUpload.length
   const startTime = Date.now()
 
-  document.getElementById('stat-total').textContent = total
+  if (uploadMode === 'insert') {
+    // ── 신규 추가 모드 ──
+    const toUpload = parsedRows.filter(r => !r._isDup)
+    const total    = toUpload.length
+    document.getElementById('stat-total').textContent = total
+    log(`신규 추가 시작: ${total}개`, 'info')
 
-  log(`업로드 시작: ${total}개`, 'info')
-
-  // 배치 처리 (5개씩)
-  const BATCH = 5
-  for (let i = 0; i < toUpload.length; i += BATCH) {
-    const chunk = toUpload.slice(i, i + BATCH)
-    await Promise.all(chunk.map(async r => {
-      try {
-        // 태그 수집
-        const tagIds = []
-        ;['tag1','tag2','tag3','tag4'].forEach(k => {
-          if (r[k]) tagIds.push(r[k])
-        })
-        // 출처 태그 자동 삽입
-        if (selectedSource && !tagIds.includes(selectedSource)) {
-          if (!tagIds.some(t => t.startsWith('source__'))) {
-            tagIds.splice(1, 0, selectedSource)
-          }
+    const BATCH = 5
+    for (let i = 0; i < toUpload.length; i += BATCH) {
+      await Promise.all(toUpload.slice(i, i+BATCH).map(async r => {
+        try {
+          const tagIds = buildTagIds(r)
+          await addDoc(collection(db, 'restaurants'), {
+            userId:    currentUser.uid,
+            name:      r.name      ?? '',
+            address:   r.address   ?? '',
+            shortAddr: r.shortAddr ?? '',
+            phone:     r.phone     ?? '',
+            hours:     r.hours     ?? '',
+            memo:      r.memo      ?? '',
+            tagIds,
+            rating:    null, visitLog: [], photos: [],
+            source:    r.broadcast_program ?? 'csv',
+            broadcast: r.broadcast_program
+              ? { program: r.broadcast_program, date: r.broadcast_date ?? '', episode: '' }
+              : null,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          })
+          done++
+          log(`✓ [신규] ${r.name}`, 'ok')
+        } catch(e) {
+          err++
+          log(`✗ ${r.name}: ${e.message}`, 'err')
         }
+        updateProgress(done, err, total, startTime)
+      }))
+    }
 
-        await addDoc(collection(db, 'restaurants'), {
-          userId:    currentUser.uid,
-          name:      r.name       ?? '',
-          address:   r.address    ?? '',
-          shortAddr: r.shortAddr  ?? '',
-          phone:     r.phone      ?? '',
-          hours:     r.hours      ?? '',
-          memo:      r.memo       ?? '',
-          tagIds,
-          rating:    null,
-          visitLog:  [],
-          photos:    [],
-          source:    r.broadcast_program ?? 'csv',
-          broadcast: r.broadcast_program ? {
-            program: r.broadcast_program,
-            date:    r.broadcast_date ?? '',
-            episode: ''
-          } : null,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        })
-        done++
-        log(`✓ ${r.name}`, 'ok')
-      } catch(e) {
-        err++
-        log(`✗ ${r.name}: ${e.message}`, 'err')
-      }
+  } else {
+    // ── 업데이트 모드 ──
+    const toUpdate = parsedRows.filter(r => r._isDup && r._canUpdate)
+    const total    = toUpdate.length
+    document.getElementById('stat-total').textContent = total
+    log(`업데이트 시작: ${total}개`, 'info')
 
-      // UI 업데이트
-      const pct = Math.round((done + err) / total * 100)
-      progressBar.style.width = pct + '%'
-      document.getElementById('stat-done').textContent = done
-      document.getElementById('stat-err').textContent  = err
-      const elapsed = (Date.now() - startTime) / 1000
-      const speed   = Math.round((done + err) / elapsed)
-      document.getElementById('stat-speed').textContent = `약 ${speed}개/초`
-      logBox.scrollTop = logBox.scrollHeight
-    }))
+    const updAddress = document.getElementById('upd-address').checked
+    const updPhone   = document.getElementById('upd-phone').checked
+    const updHours   = document.getElementById('upd-hours').checked
+    const updMemo    = document.getElementById('upd-memo').checked
+    const updTags    = document.getElementById('upd-tags').checked
+
+    const BATCH = 5
+    for (let i = 0; i < toUpdate.length; i += BATCH) {
+      await Promise.all(toUpdate.slice(i, i+BATCH).map(async r => {
+        try {
+          const key   = nameKey(r.name)
+          const exist = existingMap[key]
+          if (!exist) return
+
+          const updateData = { updatedAt: serverTimestamp() }
+          const existData  = exist.data
+
+          // 빈 필드만 채우기
+          if (updAddress && !existData.address   && r.address)   updateData.address   = r.address
+          if (updAddress && !existData.shortAddr  && r.shortAddr) updateData.shortAddr = r.shortAddr
+          if (updPhone   && !existData.phone      && r.phone)     updateData.phone     = r.phone
+          if (updHours   && !existData.hours      && r.hours)     updateData.hours     = r.hours
+          if (updMemo    && !existData.memo        && r.memo)      updateData.memo      = r.memo
+
+          // 태그 추가 (기존 태그 유지하면서 새 태그만 추가)
+          if (updTags) {
+            const newTags = buildTagIds(r)
+            const existTags = existData.tagIds ?? []
+            const toAdd = newTags.filter(t => !existTags.includes(t))
+            if (toAdd.length > 0) {
+              updateData.tagIds = [...existTags, ...toAdd]
+            }
+          }
+
+          // 실제 업데이트할 내용이 있을 때만
+          if (Object.keys(updateData).length > 1) {
+            await updateDoc(doc(db, 'restaurants', exist.id), updateData)
+            const fields = Object.keys(updateData).filter(k => k !== 'updatedAt').join(', ')
+            done++
+            log(`✓ [업데이트] ${r.name} → ${fields}`, 'ok')
+          }
+        } catch(e) {
+          err++
+          log(`✗ ${r.name}: ${e.message}`, 'err')
+        }
+        updateProgress(done, err, total, startTime)
+      }))
+    }
   }
 
   // 완료
   progressCard.style.display = 'none'
   doneCard.style.display     = 'block'
+  const modeLabel = uploadMode === 'insert' ? '신규 추가' : '업데이트'
   document.getElementById('done-msg').textContent =
-    `${done}개 저장 완료 · ${err}개 오류 · 총 ${total}개 처리`
-
-  log(`완료! ${done}/${total}`, 'info')
-  await loadExistingNames()
+    `${done}개 ${modeLabel} 완료 · ${err}개 오류`
+  log(`완료! ${done}개 처리`, 'info')
+  await loadExistingData()
   btnUpload.disabled = false
 }
 
-btnReset.onclick = () => {
-  parsedRows = []
-  fileInput.value = ''
-  previewCard.style.display  = 'none'
-  progressCard.style.display = 'none'
-  doneCard.style.display     = 'none'
+function buildTagIds(r) {
+  const tagIds = []
+  ;['tag1','tag2','tag3','tag4'].forEach(k => { if (r[k]) tagIds.push(r[k]) })
+  if (selectedSource && !tagIds.includes(selectedSource)) {
+    if (!tagIds.some(t => t.startsWith('source__'))) {
+      tagIds.splice(1, 0, selectedSource)
+    }
+  }
+  return tagIds
 }
 
-btnMore.onclick = () => {
+function updateProgress(done, err, total, startTime) {
+  const pct = total ? Math.round((done+err)/total*100) : 0
+  progressBar.style.width = pct + '%'
+  document.getElementById('stat-done').textContent = done
+  document.getElementById('stat-err').textContent  = err
+  const elapsed = (Date.now()-startTime)/1000
+  if (elapsed > 0) {
+    const speed = Math.round((done+err)/elapsed)
+    document.getElementById('stat-speed').textContent = `약 ${speed}개/초`
+  }
+  logBox.scrollTop = logBox.scrollHeight
+}
+
+// ── 리셋 ──
+function resetAll() {
   parsedRows = []
   fileInput.value = ''
   previewCard.style.display  = 'none'
   progressCard.style.display = 'none'
   doneCard.style.display     = 'none'
+  logBox.innerHTML = ''
 }
+btnReset.onclick = resetAll
+btnMore.onclick  = resetAll
 
 function log(msg, type = '') {
   const div = document.createElement('div')
