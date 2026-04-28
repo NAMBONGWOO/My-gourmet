@@ -6,8 +6,8 @@
   "background_color": "#141414",
   "display": "standalone",
   "orientation": "portrait",
-  "scope": "/",
-  "start_url": "/",
+  "scope": "/My-gourmet/",
+  "start_url": "/My-gourmet/",
   "icons": [
     {
       "src": "icons/icon-192.png",
