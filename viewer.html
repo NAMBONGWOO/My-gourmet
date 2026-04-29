@@ -86,7 +86,7 @@
       <span class="badge badge-red" id="badge-nocoord">좌표 없음 0개</span>
       <span class="badge badge-blue" id="badge-tags">태그 있음 0개</span>
       <span class="badge badge-gray" id="badge-notags">태그 없음 0개</span>
-      <button class="btn btn-ghost" id="btn-export">📥 CSV 내보내기</button>
+      <button class="btn btn-ghost" id="btn-export">📥 CSV 내보내기 ▾</button>
       <a href="index.html" style="font-size:12px;color:var(--t3);text-decoration:none;">← 앱으로</a>
     </div>
   </div>
@@ -446,10 +446,34 @@ function showDetail(r) {
   const tagRow = document.createElement('div')
   tagRow.className = 'field-row'
   tagRow.innerHTML = `<div class="field-label">태그 (${(r.tagIds??[]).length}개)</div>
-    <div class="field-value">${(r.tagIds??[]).length
-      ? (r.tagIds??[]).map(t=>`<span class="tag-pill" style="margin:2px;">${t}</span>`).join('')
+    <div class="field-value" style="display:flex;flex-wrap:wrap;gap:4px;">${(r.tagIds??[]).length
+      ? (r.tagIds??[]).map(t=>{
+          const parts = t.split('__')
+          const label = parts[1] ?? t
+          const cat   = parts[0] ?? ''
+          const colors = {food:'#ede9fe;color:#5f3dc4',source:'#fff3cd;color:#7d3800',
+            status:'#f3e8ff;color:#6a0dad',purpose:'#dbeafe;color:#1864ab',
+            space:'#fef9c3;color:#7a5800',facility:'#dcfce7;color:#1a5c2a'}
+          const c = colors[cat] ?? 'var(--bg3);color:var(--t2)'
+          return `<span style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500;background:${c};border:0.5px solid rgba(0,0,0,.1);">${label}</span>`
+        }).join('')
       : '<span class="field-empty">없음</span>'}</div>`
   panel.appendChild(tagRow)
+
+  // 방송 정보
+  if (r.broadcast) {
+    const bcRow = document.createElement('div')
+    bcRow.className = 'field-row'
+    bcRow.innerHTML = `<div class="field-label">방송 출연</div>
+      <div class="field-value">
+        <span style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500;
+          background:#fff3cd;color:#7d3800;border:0.5px solid rgba(0,0,0,.1);">
+          ${r.broadcast.program??''}
+        </span>
+        <span style="font-size:12px;color:var(--t3);margin-left:6px;">${r.broadcast.date??''}</span>
+      </div>`
+    panel.appendChild(bcRow)
+  }
 
   // 방문기록
   const visitRow = document.createElement('div')
@@ -485,17 +509,19 @@ function showDetail(r) {
     앱에서 보기 →</a>`
   panel.appendChild(linkDiv)
 
-  // 외부 클릭으로 닫기
-  setTimeout(() => {
-    document.addEventListener('click', function outsideClick(e) {
-      if (!panel.contains(e.target)) {
-        panel.style.display = 'none'
-        document.removeEventListener('click', outsideClick)
-      }
-    })
-  }, 100)
 
 }
+
+// 외부 클릭으로 패널 닫기 — 전역 단일 리스너
+document.addEventListener('click', e => {
+  const panel = document.getElementById('detail-panel')
+  if (panel.style.display === 'none') return
+  const isInsidePanel = panel.contains(e.target)
+  const isTableRow = e.target.closest('tr[data-id]')
+  if (!isInsidePanel && !isTableRow) {
+    panel.style.display = 'none'
+  }
+})
 
 function field(label, value) {
   return `<div class="field-row">
@@ -512,31 +538,118 @@ function field(label, value) {
   document.getElementById(id).addEventListener('change', applyFilters)
 })
 
-// CSV 내보내기
+// CSV 내보내기 — 필드 선택 시트
+const CSV_FIELDS = [
+  { key:'name',      label:'상호명',   get: r => r.name??'' },
+  { key:'address',   label:'주소',     get: r => r.address??'' },
+  { key:'shortAddr', label:'단축주소', get: r => r.shortAddr??'' },
+  { key:'phone',     label:'전화번호', get: r => r.phone??'' },
+  { key:'hours',     label:'영업시간', get: r => r.hours??'' },
+  { key:'lat',       label:'위도',     get: r => r.lat??'' },
+  { key:'lng',       label:'경도',     get: r => r.lng??'' },
+  { key:'tagIds',    label:'태그목록', get: r => (r.tagIds??[]).join(' | ') },
+  { key:'rating',    label:'평점',     get: r => r.rating??'' },
+  { key:'memo',      label:'메모',     get: r => r.memo??'' },
+  { key:'visitLog',  label:'방문횟수', get: r => (r.visitLog??[]).length },
+  { key:'broadcast', label:'방송정보', get: r => r.broadcast ? `${r.broadcast.program??''} ${r.broadcast.date??''}`.trim() : '' },
+]
+
 document.getElementById('btn-export').addEventListener('click', () => {
-  const headers = ['#','상호명','주소','단축주소','전화','영업시간','위도','경도','태그수','태그목록','평점','메모','방문횟수','출처','등록일']
-  const rows = filtered.map(r => [
-    r._idx,
-    `"${(r.name??'').replace(/"/g,'""')}"`,
-    `"${(r.address??'').replace(/"/g,'""')}"`,
-    `"${(r.shortAddr??'').replace(/"/g,'""')}"`,
-    `"${(r.phone??'').replace(/"/g,'""')}"`,
-    `"${(r.hours??'').replace(/"/g,'""')}"`,
-    r.lat??'',
-    r.lng??'',
-    (r.tagIds??[]).length,
-    `"${(r.tagIds??[]).join(' | ')}"`,
-    r.rating??'',
-    `"${(r.memo??'').replace(/"/g,'""')}"`,
-    (r.visitLog??[]).length,
-    r.source??'',
-    r.createdAt?.seconds ? new Date(r.createdAt.seconds*1000).toLocaleDateString('ko-KR') : ''
-  ].join(','))
-  const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n')
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}))
-  a.download = `MGA_데이터_${new Date().toISOString().slice(0,10)}.csv`
-  a.click()
+  // 기존 시트 제거
+  const existing = document.getElementById('export-sheet')
+  if (existing) { existing.remove(); return }
+
+  const sheet = document.createElement('div')
+  sheet.id = 'export-sheet'
+  sheet.style.cssText = `position:fixed;top:0;right:0;width:300px;height:100vh;
+    background:var(--bg1);border-left:0.5px solid var(--bg5);z-index:300;
+    padding:20px;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,.3);`
+
+  const selected = new Set(CSV_FIELDS.map(f => f.key))
+  let emptyOnly = false
+
+  function renderSheet() {
+    sheet.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <p style="font-size:14px;font-weight:500;">CSV 내보내기 설정</p>
+        <button id="close-export" style="background:var(--bg3);border:0.5px solid var(--bg5);
+          border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;color:var(--t2);">×</button>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--t3);margin-bottom:8px;letter-spacing:0.05em;">내보낼 필드 선택</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <button id="sel-all" style="flex:1;padding:5px;background:var(--bg3);color:var(--t2);
+            border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;cursor:pointer;
+            font-family:var(--font-body);">전체 선택</button>
+          <button id="sel-none" style="flex:1;padding:5px;background:var(--bg3);color:var(--t2);
+            border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;cursor:pointer;
+            font-family:var(--font-body);">전체 해제</button>
+        </div>
+        ${CSV_FIELDS.map(f => `
+          <label style="display:flex;align-items:center;gap:8px;padding:7px 0;
+            border-bottom:0.5px solid var(--bg4);cursor:pointer;font-size:13px;color:var(--t2);">
+            <input type="checkbox" data-field="${f.key}" ${selected.has(f.key)?'checked':''}
+              style="accent-color:var(--gold);width:14px;height:14px;flex-shrink:0;"/>
+            ${f.label}
+          </label>`).join('')}
+      </div>
+
+      <div style="margin-bottom:16px;padding:10px;background:var(--bg2);border-radius:var(--r-sm);border:0.5px solid var(--bg5);">
+        <div style="font-size:11px;color:var(--t3);margin-bottom:8px;letter-spacing:0.05em;">빈칸 필터 옵션</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--t2);">
+          <input type="checkbox" id="empty-only" ${emptyOnly?'checked':''}
+            style="accent-color:var(--gold);width:14px;height:14px;"/>
+          선택 필드에 빈칸 있는 항목만 내보내기
+        </label>
+        <div style="font-size:11px;color:var(--t4);margin-top:5px;">
+          엑셀에서 일괄 수정 후 재업로드에 유용합니다
+        </div>
+      </div>
+
+      <div style="font-size:12px;color:var(--t3);margin-bottom:12px;">
+        현재 필터 기준 <strong style="color:var(--t1);">${filtered.length}개</strong> 항목 대상
+      </div>
+
+      <button id="do-export" style="width:100%;padding:12px;background:var(--gold);color:#fff;
+        border:none;border-radius:var(--r-md);font-size:14px;font-weight:500;
+        font-family:var(--font-body);cursor:pointer;">📥 다운로드</button>`
+
+    sheet.querySelector('#close-export').onclick = () => sheet.remove()
+    sheet.querySelector('#sel-all').onclick  = () => { CSV_FIELDS.forEach(f=>selected.add(f.key));    renderSheet() }
+    sheet.querySelector('#sel-none').onclick = () => { CSV_FIELDS.forEach(f=>selected.delete(f.key)); renderSheet() }
+    sheet.querySelectorAll('[data-field]').forEach(cb => {
+      cb.onchange = () => { cb.checked ? selected.add(cb.dataset.field) : selected.delete(cb.dataset.field) }
+    })
+    sheet.querySelector('#empty-only').onchange = e => { emptyOnly = e.target.checked }
+    sheet.querySelector('#do-export').onclick = () => {
+      const activeFields = CSV_FIELDS.filter(f => selected.has(f.key))
+      let rows = filtered
+      if (emptyOnly) {
+        rows = filtered.filter(r => activeFields.some(f => {
+          const v = f.get(r)
+          return v === '' || v === null || v === undefined
+        }))
+      }
+      const headers = ['#', ...activeFields.map(f => f.label)]
+      const csvRows = rows.map((r, i) => [
+        i+1,
+        ...activeFields.map(f => {
+          const v = f.get(r)
+          return typeof v === 'string' ? `"${v.replace(/"/g,'""')}"` : v
+        })
+      ].join(','))
+      const suffix = emptyOnly ? '_빈칸포함' : ''
+      const csv = '\uFEFF' + [headers.join(','), ...csvRows].join('\n')
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}))
+      a.download = `MGA_데이터${suffix}_${new Date().toISOString().slice(0,10)}.csv`
+      a.click()
+    }
+  }
+
+  renderSheet()
+  document.body.appendChild(sheet)
 })
 </script>
 </body>
