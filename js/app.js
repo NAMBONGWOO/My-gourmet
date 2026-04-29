@@ -1023,6 +1023,26 @@ function openTagEditSheet(r){
 ══════════════════════════════════════════ */
 function renderMy(){
   const u=state.user
+
+  // 방송 수집 알림 체크
+  const scheduleOn  = localStorage.getItem('mga_schedule_on') === 'true'
+  const notifyDay   = Number(localStorage.getItem('mga_notify_day') ?? '1')
+  const lastCollect = localStorage.getItem('mga_last_broadcast_collect')
+  let broadcastAlert = null
+  if (scheduleOn) {
+    const today = new Date()
+    const todayDay = today.getDay()
+    if (todayDay >= notifyDay) {
+      const lastDate = lastCollect ? new Date(lastCollect) : null
+      const lastMonday = new Date(today)
+      lastMonday.setDate(today.getDate() - ((todayDay - notifyDay + 7) % 7))
+      lastMonday.setHours(0,0,0,0)
+      if (!lastDate || lastDate < lastMonday) {
+        broadcastAlert = '방송 맛집 수집 알림: 새 에피소드를 확인해보세요!'
+      }
+    }
+  }
+
   const totalCount=state.restaurants.length
   const visitedCount=state.restaurants.filter(r=>(r.tagIds??[]).includes('status__가본곳')||(r.visitLog??[]).length>0).length
   const wishCount=state.restaurants.filter(r=>(r.tagIds??[]).includes('status__가볼곳')).length
@@ -1034,6 +1054,17 @@ function renderMy(){
 
   $('screen-container').innerHTML=`
     <div class="my-screen screen-enter">
+      ${broadcastAlert ? `
+        <a href="broadcast.html" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;
+          background:rgba(201,169,110,.1);border:0.5px solid rgba(201,169,110,.3);
+          border-radius:var(--r-md);text-decoration:none;color:var(--t1);">
+          <span style="font-size:18px;">📺</span>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--gold);">방송 맛집 수집 알림</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px;">새 에피소드를 확인해보세요</div>
+          </div>
+          <span style="margin-left:auto;color:var(--gold);font-size:14px;">→</span>
+        </a>` : ''}
       <div style="display:flex;align-items:center;gap:16px;width:100%;
         background:var(--bg2);border:0.5px solid var(--bg5);border-radius:var(--r-md);padding:16px;">
         <div style="flex-shrink:0;">
@@ -1065,6 +1096,8 @@ function renderMy(){
         <a href="geocode.html"   style="${menuStyle}">🗺️ 주소 → 좌표 변환</a>
         <a href="duplicate.html" style="${menuStyle}">🔍 중복 관리</a>
         <a href="viewer.html"    style="${menuStyle}">📊 데이터 뷰어</a>
+        <a href="scraper.html"   style="${menuStyle}">🔗 URL 스크래퍼</a>
+        <a href="broadcast.html" style="${menuStyle}">📺 방송 맛집 수집</a>
       </div>
       <button id="btn-signout" style="width:100%;padding:13px;background:var(--bg3);color:var(--t3);
         border:0.5px solid var(--bg5);border-radius:var(--r-md);font-size:14px;font-weight:500;
