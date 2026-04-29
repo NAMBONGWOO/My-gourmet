@@ -13,10 +13,10 @@
     .logo{font-family:var(--font-display);font-size:18px;}
     .logo span{color:var(--gold);}
     .badge{display:inline-block;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:500;}
-    .badge-gold{background:rgba(201,169,110,.15);color:var(--gold);border:0.5px solid rgba(201,169,110,.3);}
-    .badge-green{background:rgba(61,107,92,.3);color:#9fe1cb;border:0.5px solid #3d6b5c;}
-    .badge-red{background:rgba(107,61,61,.3);color:#f5c4b3;border:0.5px solid #6b3d3d;}
-    .badge-blue{background:rgba(61,78,107,.3);color:#b5d4f4;border:0.5px solid #3d4e6b;}
+    .badge-gold{background:rgba(201,169,110,.2);color:#7a4f00;border:0.5px solid rgba(201,169,110,.5);font-weight:600;}
+    .badge-green{background:#c8f0e0;color:#1a5c3a;border:0.5px solid #5aad80;font-weight:600;}
+    .badge-red{background:#ffd5d5;color:#8b1a1a;border:0.5px solid #e08080;font-weight:600;}
+    .badge-blue{background:#d0e8ff;color:#1a3a6b;border:0.5px solid #6699cc;font-weight:600;}
     .badge-gray{background:var(--bg3);color:var(--t3);border:0.5px solid var(--bg5);}
     .controls{padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:0.5px solid var(--bg5);}
     .search-input{flex:1;min-width:180px;padding:8px 12px;background:var(--bg2);
@@ -269,9 +269,10 @@ function renderTable() {
     const createdAt = r.createdAt?.seconds
       ? new Date(r.createdAt.seconds*1000).toLocaleDateString('ko-KR')
       : ''
-    const tags = (r.tagIds??[]).slice(0,4).map(t =>
+    const tagCount = (r.tagIds??[]).length
+    const tags = (r.tagIds??[]).slice(0,2).map(t =>
       `<span class="tag-pill">${t.split('__')[1]??t}</span>`).join('') +
-      ((r.tagIds??[]).length > 4 ? `<span class="tag-pill">+${(r.tagIds??[]).length-4}</span>` : '')
+      (tagCount > 2 ? `<span class="tag-pill">+${tagCount-2}</span>` : '')
 
     return `<tr data-id="${r.id}" style="cursor:pointer;">
       <td style="color:var(--t4);white-space:nowrap;">${r._idx}</td>
@@ -282,7 +283,7 @@ function renderTable() {
       <td class="truncate" style="max-width:120px;">${r.hours??'<span class="field-empty">없음</span>'}</td>
       <td style="white-space:nowrap;${hasCoord?'color:var(--gold)':''}">${r.lat?r.lat.toFixed(4):'<span class="field-empty">없음</span>'}</td>
       <td style="white-space:nowrap;${hasCoord?'color:var(--gold)':''}">${r.lng?r.lng.toFixed(4):'<span class="field-empty">없음</span>'}</td>
-      <td>${tagCount?tags:`<span class="field-empty">없음</span>`}</td>
+      <td style="white-space:nowrap;">${tagCount?tags:`<span class="field-empty">없음</span>`}</td>
       <td style="white-space:nowrap;">${r.rating?`<span style="color:var(--gold);">★ ${r.rating.toFixed(1)}</span>`:'<span class="field-empty">없음</span>'}</td>
       <td class="truncate" style="max-width:120px;">${r.memo??'<span class="field-empty">없음</span>'}</td>
       <td style="white-space:nowrap;text-align:center;">${visitCount?`<span class="badge badge-blue">${visitCount}회</span>`:'<span class="field-empty">없음</span>'}</td>
@@ -317,22 +318,50 @@ function showDetail(r) {
   const updatedAt = r.updatedAt?.seconds
     ? new Date(r.updatedAt.seconds*1000).toLocaleString('ko-KR') : '없음'
 
+  const editableField = (label, key, val, type='text') => `
+    <div class="field-row">
+      <div class="field-label">${label}</div>
+      <div class="field-value" id="display-${key}">
+        ${val!=null&&val!==''?`<span class="field-ok">${val}</span>`:'<span class="field-empty">없음</span>'}
+        <button onclick="editField('${key}','${(val??'').replace(/'/g,"\'")}','${type}')"
+          style="margin-left:6px;font-size:10px;color:var(--gold);background:rgba(201,169,110,.1);
+          border:0.5px solid rgba(201,169,110,.3);padding:1px 6px;border-radius:4px;cursor:pointer;">✏️</button>
+      </div>
+      <div id="edit-${key}" style="display:none;">
+        ${type==='textarea'
+          ? `<textarea id="input-${key}" rows="3" style="width:100%;padding:6px;background:var(--bg2);
+              border:0.5px solid var(--gold);border-radius:4px;font-size:12px;color:var(--t1);
+              font-family:var(--font-body);resize:vertical;">${val??''}</textarea>`
+          : `<input id="input-${key}" type="${type}" value="${(val??'').toString().replace(/"/g,'&quot;')}"
+              style="width:100%;padding:6px;background:var(--bg2);border:0.5px solid var(--gold);
+              border-radius:4px;font-size:12px;color:var(--t1);font-family:var(--font-body);"/>`}
+        <div style="display:flex;gap:6px;margin-top:4px;">
+          <button onclick="saveField('${r.id}','${key}','${type}')"
+            style="flex:1;padding:5px;background:var(--gold);color:#fff;border:none;
+            border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font-body);">저장</button>
+          <button onclick="cancelField('${key}')"
+            style="flex:1;padding:5px;background:var(--bg3);color:var(--t2);
+            border:0.5px solid var(--bg5);border-radius:4px;font-size:11px;cursor:pointer;
+            font-family:var(--font-body);">취소</button>
+        </div>
+      </div>
+    </div>`
+
   panel.style.display = 'block'
   panel.innerHTML = `
     <div class="close-btn" id="close-detail">×</div>
     <h3>${r.name}</h3>
     <div style="font-size:10px;color:var(--t4);margin-bottom:16px;word-break:break-all;">ID: ${r.id}</div>
 
-    ${field('상호명', r.name)}
-    ${field('주소', r.address)}
-    ${field('단축주소', r.shortAddr)}
-    ${field('전화번호', r.phone)}
-    ${field('영업시간', r.hours)}
-    ${field('위도', r.lat)}
-    ${field('경도', r.lng)}
-    ${field('평점', r.rating ? `★ ${r.rating.toFixed(1)}` : null)}
-    ${field('메모', r.memo)}
-    ${field('출처', r.source)}
+    ${editableField('상호명',   'name',      r.name)}
+    ${editableField('주소',     'address',   r.address)}
+    ${editableField('단축주소', 'shortAddr', r.shortAddr)}
+    ${editableField('전화번호', 'phone',     r.phone)}
+    ${editableField('영업시간', 'hours',     r.hours)}
+    ${editableField('위도',     'lat',       r.lat,  'number')}
+    ${editableField('경도',     'lng',       r.lng,  'number')}
+    ${editableField('평점',     'rating',    r.rating, 'number')}
+    ${editableField('메모',     'memo',      r.memo, 'textarea')}
 
     <div class="field-row">
       <div class="field-label">태그 (${(r.tagIds??[]).length}개)</div>
@@ -359,12 +388,11 @@ function showDetail(r) {
       </div>
     </div>
 
-    ${field('방송 출연', r.broadcast ? JSON.stringify(r.broadcast) : null)}
     ${field('등록일', createdAt)}
     ${field('수정일', updatedAt)}
 
     <div style="margin-top:16px;">
-      <a href="index.html" onclick="window._viewDetail='${r.id}'" 
+      <a href="index.html"
         style="display:block;padding:10px;background:var(--gold);color:#fff;
         border-radius:var(--r-sm);text-align:center;text-decoration:none;font-size:13px;font-weight:500;">
         앱에서 보기 →
@@ -372,6 +400,48 @@ function showDetail(r) {
     </div>`
 
   document.getElementById('close-detail').onclick = () => { panel.style.display = 'none' }
+
+  window.editField = (key, val, type) => {
+    document.getElementById(`display-${key}`).style.display = 'none'
+    document.getElementById(`edit-${key}`).style.display = 'block'
+    const input = document.getElementById(`input-${key}`)
+    if (input) { input.value = val; input.focus() }
+  }
+  window.cancelField = (key) => {
+    document.getElementById(`display-${key}`).style.display = ''
+    document.getElementById(`edit-${key}`).style.display = 'none'
+  }
+  window.saveField = async (docId, key, type) => {
+    const input = document.getElementById(`input-${key}`)
+    if (!input) return
+    let val = input.value.trim()
+    if (type === 'number') val = val ? Number(val) : null
+
+    try {
+      const { doc, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
+      await updateDoc(doc(db, 'restaurants', docId), { [key]: val, updatedAt: serverTimestamp() })
+
+      // 로컬 데이터 업데이트
+      const idx = allData.findIndex(x => x.id === docId)
+      if (idx >= 0) { allData[idx][key] = val; r[key] = val }
+
+      // 표시 업데이트
+      const display = document.getElementById(`display-${key}`)
+      display.innerHTML = val != null && val !== ''
+        ? `<span class="field-ok">${val}</span>
+           <button onclick="editField('${key}','${String(val).replace(/'/g,"\'")}','${type}')"
+             style="margin-left:6px;font-size:10px;color:var(--gold);background:rgba(201,169,110,.1);
+             border:0.5px solid rgba(201,169,110,.3);padding:1px 6px;border-radius:4px;cursor:pointer;">✏️</button>`
+        : '<span class="field-empty">없음</span>'
+      display.style.display = ''
+      document.getElementById(`edit-${key}`).style.display = 'none'
+
+      // 테이블 행 업데이트
+      applyFilters()
+    } catch(e) {
+      alert('저장 실패: ' + e.message)
+    }
+  }
 }
 
 function field(label, value) {
