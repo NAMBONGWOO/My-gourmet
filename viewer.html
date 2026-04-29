@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ko" class="page-scroll">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MGA — 데이터 뷰어</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/tokens.css"/>
+  <style>
+    body{background:var(--bg0);color:var(--t1);min-height:100vh;font-family:var(--font-body);}
+    .top-bar{position:sticky;top:0;z-index:100;background:var(--bg1);border-bottom:0.5px solid var(--bg5);
+      padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+    .logo{font-family:var(--font-display);font-size:18px;}
+    .logo span{color:var(--gold);}
+    .badge{display:inline-block;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:500;}
+    .badge-gold{background:rgba(201,169,110,.15);color:var(--gold);border:0.5px solid rgba(201,169,110,.3);}
+    .badge-green{background:rgba(61,107,92,.3);color:#9fe1cb;border:0.5px solid #3d6b5c;}
+    .badge-red{background:rgba(107,61,61,.3);color:#f5c4b3;border:0.5px solid #6b3d3d;}
+    .badge-blue{background:rgba(61,78,107,.3);color:#b5d4f4;border:0.5px solid #3d4e6b;}
+    .badge-gray{background:var(--bg3);color:var(--t3);border:0.5px solid var(--bg5);}
+    .controls{padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:0.5px solid var(--bg5);}
+    .search-input{flex:1;min-width:180px;padding:8px 12px;background:var(--bg2);
+      border:0.5px solid var(--bg5);border-radius:var(--r-sm);font-size:13px;
+      color:var(--t1);font-family:var(--font-body);outline:none;}
+    .search-input:focus{border-color:var(--gold);}
+    select{padding:8px 12px;background:var(--bg2);border:0.5px solid var(--bg5);
+      border-radius:var(--r-sm);font-size:13px;color:var(--t1);font-family:var(--font-body);outline:none;cursor:pointer;}
+    .btn{padding:8px 14px;border-radius:var(--r-sm);font-size:12px;font-weight:500;
+      font-family:var(--font-body);cursor:pointer;border:0.5px solid var(--bg5);}
+    .btn-gold{background:var(--gold);color:#fff;border-color:var(--gold);}
+    .btn-ghost{background:var(--bg3);color:var(--t2);}
+    .table-wrap{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 160px);}
+    table{width:100%;border-collapse:collapse;font-size:12px;min-width:900px;}
+    thead th{position:sticky;top:0;z-index:10;background:var(--bg2);color:var(--t3);
+      padding:10px 12px;text-align:left;font-weight:500;border-bottom:0.5px solid var(--bg5);
+      white-space:nowrap;cursor:pointer;user-select:none;}
+    thead th:hover{color:var(--gold);}
+    thead th.sort-asc::after{content:' ▲';color:var(--gold);}
+    thead th.sort-desc::after{content:' ▼';color:var(--gold);}
+    td{padding:9px 12px;border-bottom:0.5px solid var(--bg4);color:var(--t2);vertical-align:top;}
+    td.truncate{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    tr:hover td{background:var(--bg2);}
+    .tag-pill{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;
+      background:var(--bg3);color:var(--t2);border:0.5px solid var(--bg5);margin:1px;}
+    .field-ok{color:#9fe1cb;}
+    .field-empty{color:var(--t4);font-style:italic;}
+    .spinner{width:32px;height:32px;border:2px solid var(--bg5);border-top-color:var(--gold);
+      border-radius:50%;animation:spin .7s linear infinite;margin:60px auto;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .login-wrap{text-align:center;padding:80px 20px;}
+    .btn-google{display:inline-flex;align-items:center;gap:10px;padding:13px 28px;
+      background:var(--gold);color:#fff;border:none;border-radius:var(--r-md);
+      font-size:15px;font-weight:500;font-family:var(--font-body);cursor:pointer;}
+    .detail-panel{position:fixed;top:0;right:0;width:360px;height:100vh;
+      background:var(--bg1);border-left:0.5px solid var(--bg5);
+      overflow-y:auto;z-index:200;padding:20px;box-shadow:-4px 0 20px rgba(0,0,0,.3);}
+    .detail-panel h3{font-size:15px;font-weight:500;margin-bottom:14px;color:var(--t1);}
+    .field-row{margin-bottom:10px;}
+    .field-label{font-size:10px;color:var(--t3);letter-spacing:0.05em;margin-bottom:3px;}
+    .field-value{font-size:13px;color:var(--t1);line-height:1.6;word-break:break-all;}
+    .close-btn{position:absolute;top:16px;right:16px;background:var(--bg3);border:0.5px solid var(--bg5);
+      border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+      cursor:pointer;font-size:14px;color:var(--t2);}
+  </style>
+</head>
+<body>
+
+<div id="login-wrap" class="login-wrap">
+  <div style="font-family:var(--font-display);font-size:24px;margin-bottom:6px;">My Gourmet<span style="color:var(--gold);">.</span></div>
+  <div style="font-size:13px;color:var(--t3);margin-bottom:24px;">데이터 뷰어 — 로그인이 필요합니다</div>
+  <button class="btn-google" id="btn-login">Google로 로그인</button>
+</div>
+
+<div id="main-wrap" style="display:none;">
+  <div class="top-bar">
+    <div class="logo">My Gourmet<span>.</span> <span style="font-size:13px;font-weight:400;color:var(--t3);font-family:var(--font-body);">데이터 뷰어</span></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span class="badge badge-gold" id="badge-total">전체 0개</span>
+      <span class="badge badge-green" id="badge-coord">좌표 있음 0개</span>
+      <span class="badge badge-red" id="badge-nocoord">좌표 없음 0개</span>
+      <span class="badge badge-blue" id="badge-tags">태그 있음 0개</span>
+      <span class="badge badge-gray" id="badge-notags">태그 없음 0개</span>
+      <button class="btn btn-ghost" id="btn-export">📥 CSV 내보내기</button>
+      <a href="index.html" style="font-size:12px;color:var(--t3);text-decoration:none;">← 앱으로</a>
+    </div>
+  </div>
+
+  <div class="controls">
+    <input class="search-input" id="search-input" placeholder="상호명, 주소, 태그 검색…" autocomplete="off"/>
+    <select id="filter-coord">
+      <option value="all">전체</option>
+      <option value="has">좌표 있음</option>
+      <option value="none">좌표 없음</option>
+    </select>
+    <select id="filter-tags">
+      <option value="all">태그 전체</option>
+      <option value="has">태그 있음</option>
+      <option value="none">태그 없음</option>
+    </select>
+    <select id="filter-source">
+      <option value="all">출처 전체</option>
+    </select>
+    <span style="font-size:12px;color:var(--t3);" id="result-count"></span>
+  </div>
+
+  <div id="loading-area" style="text-align:center;padding:40px;">
+    <div class="spinner"></div>
+    <div style="font-size:13px;color:var(--t3);">데이터 불러오는 중…</div>
+  </div>
+
+  <div class="table-wrap" id="table-wrap" style="display:none;">
+    <table id="data-table">
+      <thead>
+        <tr>
+          <th data-col="idx">#</th>
+          <th data-col="name">상호명</th>
+          <th data-col="address">주소</th>
+          <th data-col="shortAddr">단축주소</th>
+          <th data-col="phone">전화</th>
+          <th data-col="hours">영업시간</th>
+          <th data-col="lat">위도</th>
+          <th data-col="lng">경도</th>
+          <th data-col="tagIds">태그</th>
+          <th data-col="rating">평점</th>
+          <th data-col="memo">메모</th>
+          <th data-col="visitLog">방문기록</th>
+          <th data-col="source">출처</th>
+          <th data-col="createdAt">등록일</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="detail-panel" class="detail-panel" style="display:none;"></div>
+
+<script type="module">
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
+import { getFirestore, collection, getDocs, query, where, orderBy }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCMkebK6mjc9cGdykCb8uvUNNebMW4v33w",
+  authDomain:        "my-gourmet-5cf8c.firebaseapp.com",
+  projectId:         "my-gourmet-5cf8c",
+  storageBucket:     "my-gourmet-5cf8c.firebasestorage.app",
+  messagingSenderId: "696974063978",
+  appId:             "1:696974063978:web:b86a0f4aef907517c18d13"
+}
+
+const app  = initializeApp(firebaseConfig)
+const db   = getFirestore(app)
+const auth = getAuth(app)
+
+let allData    = []
+let filtered   = []
+let sortCol    = 'idx'
+let sortDir    = 'asc'
+let currentUser = null
+
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    currentUser = user
+    document.getElementById('login-wrap').style.display = 'none'
+    document.getElementById('main-wrap').style.display  = 'block'
+    await loadData()
+  } else {
+    document.getElementById('login-wrap').style.display = 'block'
+    document.getElementById('main-wrap').style.display  = 'none'
+  }
+})
+
+document.getElementById('btn-login').onclick =
+  () => signInWithPopup(auth, new GoogleAuthProvider())
+
+async function loadData() {
+  document.getElementById('loading-area').style.display = 'block'
+  document.getElementById('table-wrap').style.display   = 'none'
+
+  const snap = await getDocs(
+    query(collection(db,'restaurants'),
+      where('userId','==', currentUser.uid),
+      orderBy('createdAt','desc'))
+  )
+  allData = snap.docs.map((d,i) => ({ _idx: i+1, id: d.id, ...d.data() }))
+
+  // 출처 필터 옵션 구성
+  const sources = [...new Set(allData.flatMap(r => (r.tagIds??[]).filter(t=>t.startsWith('source__'))))]
+  const sel = document.getElementById('filter-source')
+  sources.forEach(s => {
+    const opt = document.createElement('option')
+    opt.value = s; opt.textContent = s.replace('source__','')
+    sel.appendChild(opt)
+  })
+
+  updateBadges()
+  applyFilters()
+  document.getElementById('loading-area').style.display = 'none'
+  document.getElementById('table-wrap').style.display   = 'block'
+}
+
+function updateBadges() {
+  const total    = allData.length
+  const hasCoord = allData.filter(r => r.lat && r.lng).length
+  const hasTags  = allData.filter(r => (r.tagIds??[]).length > 0).length
+  document.getElementById('badge-total').textContent   = `전체 ${total}개`
+  document.getElementById('badge-coord').textContent   = `좌표 있음 ${hasCoord}개`
+  document.getElementById('badge-nocoord').textContent = `좌표 없음 ${total - hasCoord}개`
+  document.getElementById('badge-tags').textContent    = `태그 있음 ${hasTags}개`
+  document.getElementById('badge-notags').textContent  = `태그 없음 ${total - hasTags}개`
+}
+
+function applyFilters() {
+  const q      = document.getElementById('search-input').value.trim().toLowerCase()
+  const fCoord = document.getElementById('filter-coord').value
+  const fTags  = document.getElementById('filter-tags').value
+  const fSrc   = document.getElementById('filter-source').value
+
+  filtered = allData.filter(r => {
+    if (fCoord === 'has'  && !(r.lat && r.lng)) return false
+    if (fCoord === 'none' && (r.lat && r.lng))  return false
+    if (fTags  === 'has'  && !(r.tagIds??[]).length) return false
+    if (fTags  === 'none' &&  (r.tagIds??[]).length) return false
+    if (fSrc !== 'all' && !(r.tagIds??[]).includes(fSrc)) return false
+    if (q) {
+      const match =
+        (r.name??'').toLowerCase().includes(q) ||
+        (r.address??'').toLowerCase().includes(q) ||
+        (r.shortAddr??'').toLowerCase().includes(q) ||
+        (r.phone??'').includes(q) ||
+        (r.tagIds??[]).some(t => t.toLowerCase().includes(q)) ||
+        (r.memo??'').toLowerCase().includes(q)
+      if (!match) return false
+    }
+    return true
+  })
+
+  sortData()
+  renderTable()
+  document.getElementById('result-count').textContent = `${filtered.length}개 표시 중`
+}
+
+function sortData() {
+  filtered.sort((a, b) => {
+    let va = a[sortCol] ?? '', vb = b[sortCol] ?? ''
+    if (sortCol === 'idx') { va = a._idx; vb = b._idx }
+    if (sortCol === 'tagIds') { va = (a.tagIds??[]).length; vb = (b.tagIds??[]).length }
+    if (sortCol === 'visitLog') { va = (a.visitLog??[]).length; vb = (b.visitLog??[]).length }
+    if (sortCol === 'createdAt') {
+      va = a.createdAt?.seconds ?? 0; vb = b.createdAt?.seconds ?? 0
+    }
+    if (typeof va === 'string') va = va.toLowerCase()
+    if (typeof vb === 'string') vb = vb.toLowerCase()
+    if (va < vb) return sortDir === 'asc' ? -1 : 1
+    if (va > vb) return sortDir === 'asc' ? 1 : -1
+    return 0
+  })
+}
+
+function renderTable() {
+  const tbody = document.getElementById('table-body')
+  tbody.innerHTML = filtered.map(r => {
+    const hasCoord = r.lat && r.lng
+    const tagCount = (r.tagIds??[]).length
+    const visitCount = (r.visitLog??[]).length
+    const createdAt = r.createdAt?.seconds
+      ? new Date(r.createdAt.seconds*1000).toLocaleDateString('ko-KR')
+      : ''
+    const tags = (r.tagIds??[]).slice(0,4).map(t =>
+      `<span class="tag-pill">${t.split('__')[1]??t}</span>`).join('') +
+      ((r.tagIds??[]).length > 4 ? `<span class="tag-pill">+${(r.tagIds??[]).length-4}</span>` : '')
+
+    return `<tr data-id="${r.id}" style="cursor:pointer;">
+      <td style="color:var(--t4);white-space:nowrap;">${r._idx}</td>
+      <td class="truncate" style="font-weight:500;color:var(--t1);max-width:140px;">${r.name??''}</td>
+      <td class="truncate">${r.address??'<span class="field-empty">없음</span>'}</td>
+      <td class="truncate" style="max-width:100px;">${r.shortAddr??'<span class="field-empty">없음</span>'}</td>
+      <td style="white-space:nowrap;">${r.phone??'<span class="field-empty">없음</span>'}</td>
+      <td class="truncate" style="max-width:120px;">${r.hours??'<span class="field-empty">없음</span>'}</td>
+      <td style="white-space:nowrap;${hasCoord?'color:var(--gold)':''}">${r.lat?r.lat.toFixed(4):'<span class="field-empty">없음</span>'}</td>
+      <td style="white-space:nowrap;${hasCoord?'color:var(--gold)':''}">${r.lng?r.lng.toFixed(4):'<span class="field-empty">없음</span>'}</td>
+      <td>${tagCount?tags:`<span class="field-empty">없음</span>`}</td>
+      <td style="white-space:nowrap;">${r.rating?`<span style="color:var(--gold);">★ ${r.rating.toFixed(1)}</span>`:'<span class="field-empty">없음</span>'}</td>
+      <td class="truncate" style="max-width:120px;">${r.memo??'<span class="field-empty">없음</span>'}</td>
+      <td style="white-space:nowrap;text-align:center;">${visitCount?`<span class="badge badge-blue">${visitCount}회</span>`:'<span class="field-empty">없음</span>'}</td>
+      <td style="white-space:nowrap;">${r.source??'<span class="field-empty">없음</span>'}</td>
+      <td style="white-space:nowrap;color:var(--t3);">${createdAt}</td>
+    </tr>`
+  }).join('')
+
+  // 행 클릭 → 상세 패널
+  tbody.querySelectorAll('tr').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const r = allData.find(x => x.id === tr.dataset.id)
+      if (r) showDetail(r)
+    })
+  })
+
+  // 헤더 정렬
+  document.querySelectorAll('thead th').forEach(th => {
+    th.className = th.dataset.col === sortCol ? `sort-${sortDir}` : ''
+    th.onclick = () => {
+      if (sortCol === th.dataset.col) sortDir = sortDir==='asc'?'desc':'asc'
+      else { sortCol = th.dataset.col; sortDir = 'asc' }
+      sortData(); renderTable()
+    }
+  })
+}
+
+function showDetail(r) {
+  const panel = document.getElementById('detail-panel')
+  const createdAt = r.createdAt?.seconds
+    ? new Date(r.createdAt.seconds*1000).toLocaleString('ko-KR') : '없음'
+  const updatedAt = r.updatedAt?.seconds
+    ? new Date(r.updatedAt.seconds*1000).toLocaleString('ko-KR') : '없음'
+
+  panel.style.display = 'block'
+  panel.innerHTML = `
+    <div class="close-btn" id="close-detail">×</div>
+    <h3>${r.name}</h3>
+    <div style="font-size:10px;color:var(--t4);margin-bottom:16px;word-break:break-all;">ID: ${r.id}</div>
+
+    ${field('상호명', r.name)}
+    ${field('주소', r.address)}
+    ${field('단축주소', r.shortAddr)}
+    ${field('전화번호', r.phone)}
+    ${field('영업시간', r.hours)}
+    ${field('위도', r.lat)}
+    ${field('경도', r.lng)}
+    ${field('평점', r.rating ? `★ ${r.rating.toFixed(1)}` : null)}
+    ${field('메모', r.memo)}
+    ${field('출처', r.source)}
+
+    <div class="field-row">
+      <div class="field-label">태그 (${(r.tagIds??[]).length}개)</div>
+      <div class="field-value">
+        ${(r.tagIds??[]).length
+          ? (r.tagIds??[]).map(t=>`<span class="tag-pill" style="margin:2px;">${t}</span>`).join('')
+          : '<span class="field-empty">없음</span>'}
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field-label">방문기록 (${(r.visitLog??[]).length}회)</div>
+      <div class="field-value">
+        ${(r.visitLog??[]).length
+          ? [...(r.visitLog??[])].reverse().map(v=>`
+            <div style="padding:8px;background:var(--bg2);border-radius:6px;margin-bottom:6px;">
+              <div style="display:flex;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--t3);">${v.date??''}</span>
+                <span style="color:var(--gold);">${'★'.repeat(v.rating??0)}</span>
+              </div>
+              ${v.memo?`<div style="font-size:12px;color:var(--t2);margin-top:4px;">${v.memo}</div>`:''}
+            </div>`).join('')
+          : '<span class="field-empty">없음</span>'}
+      </div>
+    </div>
+
+    ${field('방송 출연', r.broadcast ? JSON.stringify(r.broadcast) : null)}
+    ${field('등록일', createdAt)}
+    ${field('수정일', updatedAt)}
+
+    <div style="margin-top:16px;">
+      <a href="index.html" onclick="window._viewDetail='${r.id}'" 
+        style="display:block;padding:10px;background:var(--gold);color:#fff;
+        border-radius:var(--r-sm);text-align:center;text-decoration:none;font-size:13px;font-weight:500;">
+        앱에서 보기 →
+      </a>
+    </div>`
+
+  document.getElementById('close-detail').onclick = () => { panel.style.display = 'none' }
+}
+
+function field(label, value) {
+  return `<div class="field-row">
+    <div class="field-label">${label}</div>
+    <div class="field-value">${value!=null&&value!==''
+      ? `<span class="field-ok">${value}</span>`
+      : '<span class="field-empty">없음</span>'}</div>
+  </div>`
+}
+
+// 필터 이벤트
+['search-input','filter-coord','filter-tags','filter-source'].forEach(id => {
+  document.getElementById(id).addEventListener('input', applyFilters)
+  document.getElementById(id).addEventListener('change', applyFilters)
+})
+
+// CSV 내보내기
+document.getElementById('btn-export').addEventListener('click', () => {
+  const headers = ['#','상호명','주소','단축주소','전화','영업시간','위도','경도','태그수','태그목록','평점','메모','방문횟수','출처','등록일']
+  const rows = filtered.map(r => [
+    r._idx,
+    `"${(r.name??'').replace(/"/g,'""')}"`,
+    `"${(r.address??'').replace(/"/g,'""')}"`,
+    `"${(r.shortAddr??'').replace(/"/g,'""')}"`,
+    `"${(r.phone??'').replace(/"/g,'""')}"`,
+    `"${(r.hours??'').replace(/"/g,'""')}"`,
+    r.lat??'',
+    r.lng??'',
+    (r.tagIds??[]).length,
+    `"${(r.tagIds??[]).join(' | ')}"`,
+    r.rating??'',
+    `"${(r.memo??'').replace(/"/g,'""')}"`,
+    (r.visitLog??[]).length,
+    r.source??'',
+    r.createdAt?.seconds ? new Date(r.createdAt.seconds*1000).toLocaleDateString('ko-KR') : ''
+  ].join(','))
+  const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n')
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}))
+  a.download = `MGA_데이터_${new Date().toISOString().slice(0,10)}.csv`
+  a.click()
+})
+</script>
+</body>
+</html>
