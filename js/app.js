@@ -20,7 +20,7 @@ const signOut            = window.signOut
 const COL = 'restaurants'
 
 const state = {
-  user: null, restaurants: [], currentScreen: 'home',
+  user: null, restaurants: [], currentScreen: 'home', prevScreen: 'home',
   activeFilter: 'all', unsubscribe: null, mapInstance: null,
   detailTarget: null, userLat: null, userLng: null,
   listFilter: { food: null, source: null, status: null }
@@ -99,6 +99,7 @@ async function removeRestaurant(id){ await deleteDoc(doc(window.db,COL,id)) }
 
 /* ── 라우터 ── */
 function navigate(screen, data=null){
+  if(screen!=='detail') state.prevScreen=state.currentScreen
   state.currentScreen=screen; state.detailTarget=data
   qsa('.tab-item').forEach(el=>el.classList.toggle('active',el.dataset.tab===screen))
   const hideFAB=['add','detail'].includes(screen)
@@ -687,7 +688,7 @@ function renderDetail(r){
       </div>
     </div>`
 
-  qs('#detail-back').addEventListener('click',()=>navigate('home'))
+  qs('#detail-back').addEventListener('click',()=>navigate(state.prevScreen))
   qs('#detail-delete').addEventListener('click', async()=>{
     if(!confirm2(`"${fresh.name}"을 삭제할까요?`)) return
     await removeRestaurant(fresh.id); toast('삭제되었습니다'); navigate('home')
