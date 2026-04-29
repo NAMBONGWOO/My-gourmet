@@ -274,47 +274,51 @@
         <div style="font-size:12px;font-weight:500;color:var(--gold);margin-bottom:8px;">
           필드별 덮어쓰기 규칙
         </div>
-        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:12px;">
-          ${[
-            {id:'upd-address', label:'주소'},
-            {id:'upd-phone',   label:'전화번호'},
-            {id:'upd-hours',   label:'영업시간'},
-            {id:'upd-memo',    label:'메모'},
-          ].map(f => ``).join('')}
-          <span style="color:var(--t2);">주소</span>
-          <select id="upd-address" style="padding:4px 8px;background:var(--bg3);border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;color:var(--t1);font-family:var(--font-body);outline:none;accent-color:var(--gold);">
-            <option value="empty">빈 칸만 채우기</option>
-            <option value="longer" selected>더 길면 교체</option>
-            <option value="always">무조건 덮어쓰기</option>
-            <option value="skip">유지 (건드리지 않음)</option>
-          </select>
-          <span style="color:var(--t2);">전화번호</span>
-          <select id="upd-phone" style="padding:4px 8px;background:var(--bg3);border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;color:var(--t1);font-family:var(--font-body);outline:none;">
-            <option value="empty" selected>빈 칸만 채우기</option>
-            <option value="longer">더 길면 교체</option>
-            <option value="always">무조건 덮어쓰기</option>
-            <option value="skip">유지 (건드리지 않음)</option>
-          </select>
-          <span style="color:var(--t2);">영업시간</span>
-          <select id="upd-hours" style="padding:4px 8px;background:var(--bg3);border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;color:var(--t1);font-family:var(--font-body);outline:none;">
-            <option value="empty" selected>빈 칸만 채우기</option>
-            <option value="longer">더 길면 교체</option>
-            <option value="always">무조건 덮어쓰기</option>
-            <option value="skip">유지 (건드리지 않음)</option>
-          </select>
-          <span style="color:var(--t2);">메모</span>
-          <select id="upd-memo" style="padding:4px 8px;background:var(--bg3);border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;color:var(--t1);font-family:var(--font-body);outline:none;">
-            <option value="skip" selected>유지 (건드리지 않음)</option>
-            <option value="empty">빈 칸만 채우기</option>
-            <option value="longer">더 길면 교체</option>
-            <option value="always">무조건 덮어쓰기</option>
-          </select>
-          <span style="color:var(--t2);">태그</span>
-          <select id="upd-tags" style="padding:4px 8px;background:var(--bg3);border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;color:var(--t1);font-family:var(--font-body);outline:none;">
-            <option value="skip" selected>유지 (건드리지 않음)</option>
-            <option value="merge">기존 유지 + 새 태그 추가</option>
-            <option value="always">무조건 덮어쓰기</option>
-          </select>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="width:60px;font-size:12px;color:var(--t2);flex-shrink:0;">주소</span>
+            <select id="upd-address" style="width:100%;padding:5px 8px;background:var(--bg2);border:0.5px solid var(--bg5);border-radius:6px;font-size:12px;color:var(--t1);font-family:var(--font-body);outline:none;">
+              <option value="empty">빈 칸만 채우기</option>
+              <option value="longer" selected>더 길면 교체</option>
+              <option value="always">무조건 덮어쓰기</option>
+              <option value="skip">유지</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="width:60px;font-size:12px;color:var(--t2);flex-shrink:0;">전화번호</span>
+            <select id="upd-phone" style="width:100%;padding:5px 8px;background:var(--bg2);border:0.5px solid var(--bg5);border-radius:6px;font-size:12px;color:var(--t1);font-family:var(--font-body);outline:none;">
+              <option value="empty" selected>빈 칸만 채우기</option>
+              <option value="longer">더 길면 교체</option>
+              <option value="always">무조건 덮어쓰기</option>
+              <option value="skip">유지</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="width:60px;font-size:12px;color:var(--t2);flex-shrink:0;">영업시간</span>
+            <select id="upd-hours" style="width:100%;padding:5px 8px;background:var(--bg2);border:0.5px solid var(--bg5);border-radius:6px;font-size:12px;color:var(--t1);font-family:var(--font-body);outline:none;">
+              <option value="empty" selected>빈 칸만 채우기</option>
+              <option value="longer">더 길면 교체</option>
+              <option value="always">무조건 덮어쓰기</option>
+              <option value="skip">유지</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="width:60px;font-size:12px;color:var(--t2);flex-shrink:0;">메모</span>
+            <select id="upd-memo" style="width:100%;padding:5px 8px;background:var(--bg2);border:0.5px solid var(--bg5);border-radius:6px;font-size:12px;color:var(--t1);font-family:var(--font-body);outline:none;">
+              <option value="skip" selected>유지</option>
+              <option value="empty">빈 칸만 채우기</option>
+              <option value="longer">더 길면 교체</option>
+              <option value="always">무조건 덮어쓰기</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="width:60px;font-size:12px;color:var(--t2);flex-shrink:0;">태그</span>
+            <select id="upd-tags" style="width:100%;padding:5px 8px;background:var(--bg2);border:0.5px solid var(--bg5);border-radius:6px;font-size:12px;color:var(--t1);font-family:var(--font-body);outline:none;">
+              <option value="skip" selected>유지</option>
+              <option value="merge">기존 유지 + 새 태그 추가</option>
+              <option value="always">무조건 덮어쓰기</option>
+            </select>
+          </div>
         </div>
         <div style="margin-top:8px;font-size:11px;color:var(--t3);">
           ※ <strong style="color:var(--t2);">더 길면 교체</strong>: 새 값이 기존 값보다 길 때만 교체합니다 (상세주소 업데이트에 적합)
