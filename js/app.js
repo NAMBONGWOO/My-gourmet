@@ -300,7 +300,7 @@ function renderMap(filtered){
   const map=L.map('map',{zoomControl:false}).setView(center,13)
   state.mapInstance=map
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map)
-  const ACCENT={food:'#c9a96e',purpose:'#1864ab',space:'#7a5800',source:'#7d3800',facility:'#1a5c2a',status:'#6a0dad'}
+  const ACCENT={food:'#FF6B35',purpose:'#00B4D8',space:'#06D6A0',source:'#FFD166',facility:'#118AB2',status:'#EF476F'}
   filtered.filter(r=>r.lat&&r.lng).forEach(r=>{
     const catId=(r.tagIds??[]).find(id=>TAG_MAP[id])?.split('__')[0]??'food'
     const color=ACCENT[catId]??'#c9a96e'
@@ -326,7 +326,7 @@ function renderMap(filtered){
   }
   if(state.userLat&&state.userLng){
     L.circleMarker([state.userLat,state.userLng],{
-      radius:8,fillColor:'#c9a96e',color:'#fff',weight:2,fillOpacity:1
+      radius:10,fillColor:'#FF6B35',color:'#fff',weight:3,fillOpacity:1
     }).addTo(map).bindPopup('내 위치')
   }
 
@@ -353,7 +353,7 @@ function renderMap(filtered){
       const vpFiltered=applyHomeFilter(vpList)
       // 지도 핀 업데이트
       map.eachLayer(layer=>{ if(layer instanceof L.Marker) map.removeLayer(layer) })
-      const ACCENT={food:'#c9a96e',purpose:'#1864ab',space:'#7a5800',source:'#7d3800',facility:'#1a5c2a',status:'#6a0dad'}
+      const ACCENT={food:'#FF6B35',purpose:'#00B4D8',space:'#06D6A0',source:'#FFD166',facility:'#118AB2',status:'#EF476F'}
       vpFiltered.forEach(r=>{
         if(!r.lat||!r.lng) return
         const catId=(r.tagIds??[]).find(id=>TAG_MAP[id])?.split('__')[0]??'food'
@@ -437,10 +437,6 @@ function renderGrid(filtered){
 ══════════════════════════════════════════ */
 function renderList(){
   const filtered=getListFiltered()
-  const foodTags=TAG_CATEGORIES.find(c=>c.id==='food').groups.flatMap(g=>g.tags)
-  const sourceTags=TAG_CATEGORIES.find(c=>c.id==='source').groups.flatMap(g=>g.tags).slice(0,12)
-  const statusTags=TAG_CATEGORIES.find(c=>c.id==='status').groups.flatMap(g=>g.tags)
-
   $('screen-container').innerHTML=`
     <div class="list-screen screen-enter">
       <div style="padding:10px 16px 0;">
@@ -452,27 +448,13 @@ function renderList(){
             placeholder="식당명, 태그, 지역 검색…" autocomplete="off"/>
         </div>
       </div>
-      <div style="padding:10px 16px 0;">
-        <div id="filter-panel">
-          ${[
-            {label:'음식 종류',cat:'food',tags:foodTags},
-            {label:'검증 출처',cat:'source',tags:sourceTags},
-            {label:'나의 상태',cat:'status',tags:statusTags},
-          ].map(({label,cat,tags})=>`
-            <div style="margin-bottom:10px;">
-              <div style="font-size:10px;color:var(--t3);letter-spacing:0.05em;margin-bottom:6px;">${label}</div>
-              <div style="display:flex;gap:5px;flex-wrap:wrap;" id="filter-row-${cat}">
-                ${tags.map(t=>{
-                  const isA=state.listFilter[cat]===t.id
-                  const c=TAG_COLORS[cat]
-                  return `<button class="filter-tag${isA?' active-tag':''}" data-cat="${cat}" data-id="${t.id}"
-                    style="${isA?`background:${c.bg};color:${c.fg};border-color:${c.bd};`:''}">${t.label}</button>`
-                }).join('')}
-              </div>
-            </div>`).join('')}
-        </div>
+      <!-- 홈처럼 핵심 칩 + 더보기 -->
+      <div style="padding:8px 16px 0;">
+        <div class="filter-inner" id="list-filter-inner"></div>
       </div>
-      <div style="padding:6px 16px 10px;">
+      <!-- 활성 필터 표시 -->
+      <div id="list-active-filters" style="padding:4px 16px 0;display:flex;gap:5px;flex-wrap:wrap;min-height:0;"></div>
+      <div style="padding:8px 16px 10px;">
         <button id="btn-result-count" style="width:100%;padding:12px;background:var(--t1);color:var(--bg1);
           border:none;border-radius:var(--r-md);font-size:14px;font-weight:500;
           font-family:var(--font-body);cursor:pointer;">
@@ -482,21 +464,7 @@ function renderList(){
       <div class="list-result" id="list-result">${renderListCards(filtered)}</div>
     </div>`
 
-  qs('#filter-panel').addEventListener('click', e=>{
-    const btn=e.target.closest('.filter-tag'); if(!btn) return
-    const cat=btn.dataset.cat, id=btn.dataset.id
-    state.listFilter[cat]=state.listFilter[cat]===id?null:id
-    const newFiltered=getListFiltered()
-    qs('#result-count-text').textContent=`${newFiltered.length}곳 보기`
-    qs('#list-result').innerHTML=renderListCards(newFiltered)
-    attachListCardEvents()
-    qs(`#filter-row-${cat}`).querySelectorAll('.filter-tag').forEach(b=>{
-      const isA=state.listFilter[cat]===b.dataset.id
-      const c=TAG_COLORS[cat]
-      b.style.background=isA?c.bg:''; b.style.color=isA?c.fg:''; b.style.borderColor=isA?c.bd:''
-      b.classList.toggle('active-tag',isA)
-    })
-  })
+  renderListFilterChips()
 
   qs('#list-search').addEventListener('input', e=>{
     const q=e.target.value.trim().toLowerCase()
@@ -514,6 +482,150 @@ function renderList(){
     qs('#list-result').scrollIntoView({behavior:'smooth'})
   })
   attachListCardEvents()
+}
+
+function renderListFilterChips(){
+  const inner=qs('#list-filter-inner'); if(!inner) return
+  const cats=[
+    {key:'food',  label:'음식'},
+    {key:'source',label:'출처'},
+    {key:'status',label:'내상태'},
+  ]
+  inner.innerHTML=cats.map(f=>{
+    const c=TAG_COLORS[f.key]
+    const isActive=!!state.listFilter[f.key]
+    const style=isActive?`background:${c.fg};color:#fff;border-color:${c.fg};`:
+      `background:${c.bg};color:${c.fg};border-color:${c.bd};`
+    const dot=`<span class="filter-chip-dot" style="background:${isActive?'#fff':c.fg}"></span>`
+    return `<button class="filter-chip" style="${style}" data-lcat="${f.key}">${dot}${f.label}</button>`
+  }).join('')+
+  `<button class="filter-chip" id="btn-list-filter-more"
+    style="background:var(--bg3);color:var(--t2);border-color:var(--bg5);">▼ 더보기</button>
+  ${Object.values(state.listFilter).some(v=>v)?
+    `<button class="filter-chip" id="btn-list-reset"
+      style="background:var(--bg3);color:var(--t3);border-color:var(--bg5);">✕ 초기화</button>`
+    :''}`
+
+  inner.addEventListener('click', e=>{
+    const btn=e.target.closest('.filter-chip'); if(!btn) return
+    if(btn.id==='btn-list-filter-more'){ openListFilterSheet(); return }
+    if(btn.id==='btn-list-reset'){
+      state.listFilter={food:null,source:null,status:null}
+      updateListResults(); renderListFilterChips(); renderListActiveFilters(); return
+    }
+    const cat=btn.dataset.lcat; if(!cat) return
+    openListCategorySheet(cat)
+  })
+
+  renderListActiveFilters()
+}
+
+function renderListActiveFilters(){
+  const el=qs('#list-active-filters'); if(!el) return
+  const active=Object.entries(state.listFilter).filter(([,v])=>v)
+  if(!active.length){ el.innerHTML=''; return }
+  el.innerHTML=active.map(([cat,id])=>{
+    const c=TAG_COLORS[cat], tag=TAG_MAP[id]
+    return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;
+      border-radius:var(--r-pill);font-size:11px;font-weight:500;
+      background:${c.bg};color:${c.fg};border:0.5px solid ${c.bd};">
+      ${tag?.label??id}
+      <button data-clear="${cat}" style="background:none;border:none;color:${c.fg};
+        cursor:pointer;font-size:12px;padding:0;line-height:1;">×</button>
+    </span>`
+  }).join('')
+  el.querySelectorAll('[data-clear]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation()
+      state.listFilter[btn.dataset.clear]=null
+      updateListResults(); renderListFilterChips(); renderListActiveFilters()
+    })
+  })
+}
+
+function openListCategorySheet(catId){
+  const cat=TAG_CATEGORIES.find(c=>c.id===catId); if(!cat) return
+  const c=TAG_COLORS[catId]
+  const overlay=document.createElement('div'); overlay.className='sheet-overlay'
+  overlay.innerHTML=`
+    <div class="sheet-panel">
+      <div class="sheet-handle"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <span style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500;
+          background:${c.bg};color:${c.fg};border:0.5px solid ${c.bd};">${cat.num}</span>
+        <p style="font-size:14px;font-weight:500;color:${c.fg};">${cat.name} 필터</p>
+      </div>
+      <button class="list-filter-tag-btn" data-tag=""
+        style="margin-bottom:10px;width:100%;padding:8px;
+        background:${!state.listFilter[catId]?c.fg:'var(--bg3)'};
+        color:${!state.listFilter[catId]?'#fff':c.fg};
+        border:0.5px solid ${c.bd};border-radius:var(--r-sm);
+        font-size:12px;font-weight:500;font-family:var(--font-body);cursor:pointer;">
+        전체 ${cat.name}
+      </button>
+      ${cat.groups.map(g=>`
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:6px;">${g.label}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            ${g.tags.map(t=>`
+              <button class="list-filter-tag-btn" data-tag="${t.id}"
+                style="padding:5px 12px;border-radius:var(--r-pill);
+                border:0.5px solid ${state.listFilter[catId]===t.id?c.fg:c.bd};
+                background:${state.listFilter[catId]===t.id?c.fg:c.bg};
+                color:${state.listFilter[catId]===t.id?'#fff':c.fg};
+                font-size:12px;font-weight:500;font-family:var(--font-body);cursor:pointer;">
+                ${t.label}</button>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>`
+  document.getElementById('app').appendChild(overlay)
+  overlay.addEventListener('click', e=>{
+    const btn=e.target.closest('.list-filter-tag-btn')
+    if(btn){
+      state.listFilter[catId]=btn.dataset.tag||null
+      overlay.remove()
+      updateListResults(); renderListFilterChips(); renderListActiveFilters()
+      return
+    }
+    if(e.target===overlay) overlay.remove()
+  })
+}
+
+function openListFilterSheet(){
+  const overlay=document.createElement('div'); overlay.className='sheet-overlay'
+  overlay.innerHTML=`
+    <div class="sheet-panel">
+      <div class="sheet-handle"></div>
+      <p style="font-size:14px;font-weight:500;margin-bottom:14px;">필터 선택</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${[{key:'food',label:'음식 종류'},{key:'source',label:'검증 출처'},{key:'status',label:'나의 상태'}].map(f=>{
+          const c=TAG_COLORS[f.key], isActive=!!state.listFilter[f.key]
+          return `<button class="list-sheet-cat" data-cat="${f.key}"
+            style="display:flex;align-items:center;gap:10px;padding:12px;
+            border-radius:var(--r-md);border:0.5px solid ${isActive?c.fg:c.bd};
+            background:${isActive?c.fg:c.bg};color:${isActive?'#fff':c.fg};
+            font-family:var(--font-body);cursor:pointer;text-align:left;">
+            <span style="font-size:13px;font-weight:500;">${f.label}</span>
+            ${isActive?`<span style="font-size:11px;margin-left:auto;opacity:0.8;">
+              ${TAG_MAP[state.listFilter[f.key]]?.label??''}</span>`:''}
+            <span style="font-size:11px;opacity:0.6;margin-left:auto;">▶</span>
+          </button>`}).join('')}
+      </div>
+    </div>`
+  document.getElementById('app').appendChild(overlay)
+  overlay.addEventListener('click', e=>{
+    const btn=e.target.closest('.list-sheet-cat')
+    if(btn){ overlay.remove(); openListCategorySheet(btn.dataset.cat); return }
+    if(e.target===overlay) overlay.remove()
+  })
+}
+
+function updateListResults(){
+  const newFiltered=getListFiltered()
+  const countEl=qs('#result-count-text')
+  const resultEl=qs('#list-result')
+  if(countEl) countEl.textContent=`${newFiltered.length}곳 보기`
+  if(resultEl){ resultEl.innerHTML=renderListCards(newFiltered); attachListCardEvents() }
 }
 
 function getListFiltered(){
