@@ -65,6 +65,12 @@
 </head>
 <body>
 
+<div id="auth-loading" style="text-align:center;padding:80px 20px;">
+  <div style="font-family:var(--font-display);font-size:24px;margin-bottom:20px;">My Gourmet<span style="color:var(--gold);">.</span></div>
+  <div style="width:32px;height:32px;border:2px solid var(--bg5);border-top-color:var(--gold);
+    border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px;"></div>
+  <div style="font-size:13px;color:var(--t3);">로그인 확인 중…</div>
+</div>
 <div id="login-wrap" class="login-wrap">
   <div style="font-family:var(--font-display);font-size:24px;margin-bottom:6px;">My Gourmet<span style="color:var(--gold);">.</span></div>
   <div style="font-size:13px;color:var(--t3);margin-bottom:24px;">데이터 뷰어 — 로그인이 필요합니다</div>
@@ -163,7 +169,13 @@ let sortCol    = 'idx'
 let sortDir    = 'asc'
 let currentUser = null
 
+// 초기 로딩 중 표시
+document.getElementById('login-wrap').style.display  = 'none'
+document.getElementById('main-wrap').style.display   = 'none'
+document.getElementById('auth-loading').style.display = 'block'
+
 onAuthStateChanged(auth, async user => {
+  document.getElementById('auth-loading').style.display = 'none'
   if (user) {
     currentUser = user
     document.getElementById('login-wrap').style.display = 'none'
@@ -271,7 +283,6 @@ function renderTable() {
     const createdAt = r.createdAt?.seconds
       ? new Date(r.createdAt.seconds*1000).toLocaleDateString('ko-KR')
       : ''
-    const tagCount = (r.tagIds??[]).length
     const tags = (r.tagIds??[]).slice(0,2).map(t =>
       `<span class="tag-pill">${t.split('__')[1]??t}</span>`).join('') +
       (tagCount > 2 ? `<span class="tag-pill">+${tagCount-2}</span>` : '')
