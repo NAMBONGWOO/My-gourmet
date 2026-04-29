@@ -22,7 +22,7 @@ const COL = 'restaurants'
 const state = {
   user: null, restaurants: [], currentScreen: 'home', prevScreen: 'home',
   activeFilter: 'all', unsubscribe: null, mapInstance: null,
-  detailTarget: null, userLat: null, userLng: null,
+  detailTarget: null, userLat: null, userLng: null, mapMode: 'adaptive',
   listFilter: { food: null, source: null, status: null }
 }
 
@@ -121,20 +121,31 @@ window.navigate=navigate
    홈
 ══════════════════════════════════════════ */
 function renderHome(){
-  const nearby=getNearbyRestaurants()
-  const filtered=applyHomeFilter(nearby)
+  const nearby=getAdaptiveNearby()
+  const filtered=applyHomeFilter(nearby.list)
+  const radiusText=nearby.radius!=null?` (반경 ${nearby.radius.toFixed(1)}km)`:''
   $('screen-container').innerHTML=`
     <div class="home-screen screen-enter">
       <div class="filter-bar" style="padding:8px 0 0;">
         <div class="filter-inner" id="filter-inner"></div>
       </div>
-      <div class="map-wrap" style="height:45vh;margin:8px 16px 0;">
+      <div class="map-wrap" style="height:45vh;margin:8px 16px 0;position:relative;">
         <div id="map"></div>
-        <div class="map-badge" id="map-badge">내 주변 ${filtered.length}곳</div>
+        <div class="map-badge" id="map-badge">📍 ${filtered.length}곳${radiusText}</div>
+        <button id="btn-search-area" style="display:none;position:absolute;top:10px;left:50%;
+          transform:translateX(-50%);z-index:1000;padding:7px 16px;
+          background:var(--bg1);color:var(--t1);border:0.5px solid var(--bg5);
+          border-radius:var(--r-pill);font-size:12px;font-weight:500;
+          font-family:var(--font-body);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);
+          white-space:nowrap;">🔍 이 지역 검색</button>
+        <button id="btn-my-location" style="position:absolute;bottom:10px;right:10px;
+          z-index:1000;width:36px;height:36px;border-radius:50%;
+          background:var(--bg1);border:0.5px solid var(--bg5);
+          font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);">📍</button>
       </div>
       <div class="section-header" style="padding:10px 16px 6px;">
         <span class="section-title">NEARBY RESTAURANTS</span>
-        <span class="section-count">${filtered.length}곳</span>
+        <span class="section-count" id="section-count">${filtered.length}곳</span>
       </div>
       <div class="grid-scroll" id="rest-grid"></div>
     </div>`
@@ -143,13 +154,31 @@ function renderHome(){
   renderGrid(filtered)
 }
 
-function getNearbyRestaurants(){
-  if(!state.userLat||!state.userLng) return state.restaurants
+// 적응형 반경 — 거리순 상위 30개, 반경 자동 계산
+function getAdaptiveNearby(){
+  if(!state.userLat||!state.userLng) return {list:state.restaurants, radius:null}
   const withDist=state.restaurants.filter(r=>r.lat&&r.lng)
     .map(r=>({...r,_dist:distKm(state.userLat,state.userLng,r.lat,r.lng)}))
-    .filter(r=>r._dist<=20).sort((a,b)=>a._dist-b._dist)
+    .sort((a,b)=>a._dist-b._dist)
+  const top30=withDist.slice(0,30)
+  const radius=top30.length>0?top30[top30.length-1]._dist:null
   const noCoord=state.restaurants.filter(r=>!r.lat||!r.lng)
-  return [...withDist,...noCoord]
+  return {list:[...top30,...noCoord], radius}
+}
+
+// 뷰포트 기준 필터
+function getViewportRestaurants(map){
+  const bounds=map.getBounds()
+  return state.restaurants.filter(r=>{
+    if(!r.lat||!r.lng) return false
+    return bounds.contains([r.lat,r.lng])
+  }).map(r=>({...r,_dist:
+    state.userLat?distKm(state.userLat,state.userLng,r.lat,r.lng):null
+  }))
+}
+
+function getNearbyRestaurants(){
+  return getAdaptiveNearby().list
 }
 
 function applyHomeFilter(list){
@@ -299,6 +328,79 @@ function renderMap(filtered){
     L.circleMarker([state.userLat,state.userLng],{
       radius:8,fillColor:'#c9a96e',color:'#fff',weight:2,fillOpacity:1
     }).addTo(map).bindPopup('내 위치')
+  }
+
+  // 지도 이동 감지 → "이 지역 검색" 버튼 표시
+  let moveTimer=null
+  map.on('movestart', ()=>{
+    const btn=document.getElementById('btn-search-area')
+    if(btn) btn.style.display='none'
+  })
+  map.on('moveend', ()=>{
+    clearTimeout(moveTimer)
+    moveTimer=setTimeout(()=>{
+      const btn=document.getElementById('btn-search-area')
+      if(btn) btn.style.display='block'
+    }, 300)
+  })
+
+  // 이 지역 검색 버튼
+  const btnSearch=document.getElementById('btn-search-area')
+  if(btnSearch){
+    btnSearch.addEventListener('click', ()=>{
+      btnSearch.style.display='none'
+      const vpList=getViewportRestaurants(map)
+      const vpFiltered=applyHomeFilter(vpList)
+      // 지도 핀 업데이트
+      map.eachLayer(layer=>{ if(layer instanceof L.Marker) map.removeLayer(layer) })
+      const ACCENT={food:'#c9a96e',purpose:'#1864ab',space:'#7a5800',source:'#7d3800',facility:'#1a5c2a',status:'#6a0dad'}
+      vpFiltered.forEach(r=>{
+        if(!r.lat||!r.lng) return
+        const catId=(r.tagIds??[]).find(id=>TAG_MAP[id])?.split('__')[0]??'food'
+        const color=ACCENT[catId]??'#c9a96e'
+        const icon=L.divIcon({
+          html:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="28" viewBox="0 0 20 28">
+            <path d="M10 0C4.5 0 0 4.5 0 10c0 7 10 18 10 18S20 17 20 10C20 4.5 15.5 0 10 0z"
+              fill="${color}" stroke="#fff" stroke-width="1.5"/>
+            <circle cx="10" cy="10" r="3" fill="#fff" opacity="0.8"/></svg>`,
+          className:'',iconSize:[20,28],iconAnchor:[10,28],popupAnchor:[0,-30]
+        })
+        L.marker([r.lat,r.lng],{icon}).addTo(map).bindPopup(`
+          <div style="font-family:'DM Sans',sans-serif;min-width:110px;">
+            <strong style="font-size:13px;">${r.name}</strong><br>
+            <small style="color:#868e96;">${r.shortAddr||''}</small><br>
+            <button onclick="window._mgaDetail('${r.id}')"
+              style="margin-top:7px;padding:5px 10px;background:#c9a96e;color:#fff;
+              border:none;border-radius:6px;font-size:11px;cursor:pointer;
+              width:100%;font-family:'DM Sans',sans-serif;">상세 보기 →</button>
+          </div>`)
+      })
+      // 카드 + 배지 업데이트
+      const badge=document.getElementById('map-badge')
+      const count=document.getElementById('section-count')
+      if(badge) badge.textContent=`🔍 ${vpFiltered.length}곳 (현 지도 기준)`
+      if(count) count.textContent=`${vpFiltered.length}곳`
+      renderGrid(vpFiltered)
+    })
+  }
+
+  // 내 위치 버튼
+  const btnMyLoc=document.getElementById('btn-my-location')
+  if(btnMyLoc){
+    btnMyLoc.addEventListener('click', ()=>{
+      if(state.userLat&&state.userLng){
+        map.setView([state.userLat,state.userLng],13)
+        const nearby=getAdaptiveNearby()
+        const filtered=applyHomeFilter(nearby.list)
+        const radiusText=nearby.radius!=null?` (반경 ${nearby.radius.toFixed(1)}km)`:''
+        const badge=document.getElementById('map-badge')
+        const count=document.getElementById('section-count')
+        if(badge) badge.textContent=`📍 ${filtered.length}곳${radiusText}`
+        if(count) count.textContent=`${filtered.length}곳`
+        renderGrid(filtered)
+        document.getElementById('btn-search-area').style.display='none'
+      }
+    })
   }
 }
 
