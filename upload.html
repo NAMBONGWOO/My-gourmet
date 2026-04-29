@@ -272,28 +272,52 @@
       <div id="update-options" style="display:none;background:var(--bg3);
            border-radius:var(--r-sm);padding:12px;">
         <div style="font-size:12px;font-weight:500;color:var(--gold);margin-bottom:8px;">
-          업데이트할 필드 선택
+          필드별 덮어쓰기 규칙
         </div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--t2);">
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
-            <input type="checkbox" id="upd-address" checked style="accent-color:var(--gold);">주소
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
-            <input type="checkbox" id="upd-phone" checked style="accent-color:var(--gold);">전화번호
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
-            <input type="checkbox" id="upd-hours" checked style="accent-color:var(--gold);">영업시간
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
-            <input type="checkbox" id="upd-memo" style="accent-color:var(--gold);">메모
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
-            <input type="checkbox" id="upd-tags" style="accent-color:var(--gold);">태그 추가
-          </label>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:12px;">
+          ${[
+            {id:'upd-address', label:'주소'},
+            {id:'upd-phone',   label:'전화번호'},
+            {id:'upd-hours',   label:'영업시간'},
+            {id:'upd-memo',    label:'메모'},
+          ].map(f => ``).join('')}
+          <span style="color:var(--t2);">주소</span>
+          <select id="upd-address" style="padding:4px 8px;background:var(--bg3);border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;color:var(--t1);font-family:var(--font-body);outline:none;accent-color:var(--gold);">
+            <option value="empty">빈 칸만 채우기</option>
+            <option value="longer" selected>더 길면 교체</option>
+            <option value="always">무조건 덮어쓰기</option>
+            <option value="skip">유지 (건드리지 않음)</option>
+          </select>
+          <span style="color:var(--t2);">전화번호</span>
+          <select id="upd-phone" style="padding:4px 8px;background:var(--bg3);border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;color:var(--t1);font-family:var(--font-body);outline:none;">
+            <option value="empty" selected>빈 칸만 채우기</option>
+            <option value="longer">더 길면 교체</option>
+            <option value="always">무조건 덮어쓰기</option>
+            <option value="skip">유지 (건드리지 않음)</option>
+          </select>
+          <span style="color:var(--t2);">영업시간</span>
+          <select id="upd-hours" style="padding:4px 8px;background:var(--bg3);border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;color:var(--t1);font-family:var(--font-body);outline:none;">
+            <option value="empty" selected>빈 칸만 채우기</option>
+            <option value="longer">더 길면 교체</option>
+            <option value="always">무조건 덮어쓰기</option>
+            <option value="skip">유지 (건드리지 않음)</option>
+          </select>
+          <span style="color:var(--t2);">메모</span>
+          <select id="upd-memo" style="padding:4px 8px;background:var(--bg3);border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;color:var(--t1);font-family:var(--font-body);outline:none;">
+            <option value="skip" selected>유지 (건드리지 않음)</option>
+            <option value="empty">빈 칸만 채우기</option>
+            <option value="longer">더 길면 교체</option>
+            <option value="always">무조건 덮어쓰기</option>
+          </select>
+          <span style="color:var(--t2);">태그</span>
+          <select id="upd-tags" style="padding:4px 8px;background:var(--bg3);border:0.5px solid var(--bg5);border-radius:6px;font-size:11px;color:var(--t1);font-family:var(--font-body);outline:none;">
+            <option value="skip" selected>유지 (건드리지 않음)</option>
+            <option value="merge">기존 유지 + 새 태그 추가</option>
+            <option value="always">무조건 덮어쓰기</option>
+          </select>
         </div>
         <div style="margin-top:8px;font-size:11px;color:var(--t3);">
-          ※ 체크된 필드 중 <strong style="color:var(--t2);">현재 비어있는 것만</strong> 채웁니다.
-          이미 값이 있으면 덮어쓰지 않습니다.
+          ※ <strong style="color:var(--t2);">더 길면 교체</strong>: 새 값이 기존 값보다 길 때만 교체합니다 (상세주소 업데이트에 적합)
         </div>
       </div>
     </div>
@@ -374,9 +398,7 @@ import { getFirestore,
          collection, addDoc, getDocs, updateDoc, doc,
          query, where, arrayUnion,
          serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
-import { getAuth, GoogleAuthProvider,
-         onAuthStateChanged,
-         signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
 
 // ★ Firebase 설정값 입력 ★
 const firebaseConfig = {
@@ -391,6 +413,7 @@ const firebaseConfig = {
 const app  = initializeApp(firebaseConfig)
 const db   = getFirestore(app)
 const auth = getAuth(app)
+setPersistence(auth, browserLocalPersistence).catch(e => console.warn('persistence error', e))
 const provider = new GoogleAuthProvider()
 
 // ── 상태 ──
@@ -561,11 +584,11 @@ function renderPreview(rows) {
       // 업데이트 모드에서 업데이트 가능 여부 확인
       const exist = existingMap[key]?.data ?? {}
       r._canUpdate = (
-        (document.getElementById('upd-address').checked && !exist.address && r.address) ||
-        (document.getElementById('upd-phone').checked   && !exist.phone   && r.phone)   ||
-        (document.getElementById('upd-hours').checked   && !exist.hours   && r.hours)   ||
-        (document.getElementById('upd-memo').checked    && !exist.memo    && r.memo)     ||
-        (document.getElementById('upd-tags').checked    && r.tag1)
+        (document.getElementById('upd-address').value !== 'skip' && r.address) ||
+        (document.getElementById('upd-phone').value   !== 'skip' && r.phone)   ||
+        (document.getElementById('upd-hours').value   !== 'skip' && r.hours)   ||
+        (document.getElementById('upd-memo').value    !== 'skip' && r.memo)    ||
+        (document.getElementById('upd-tags').value    !== 'skip' && r.tag1)
       )
       if (uploadMode === 'update' && r._canUpdate) updCount++
     } else {
@@ -689,11 +712,21 @@ btnUpload.onclick = async () => {
     document.getElementById('stat-total').textContent = total
     log(`업데이트 시작: ${total}개`, 'info')
 
-    const updAddress = document.getElementById('upd-address').checked
-    const updPhone   = document.getElementById('upd-phone').checked
-    const updHours   = document.getElementById('upd-hours').checked
-    const updMemo    = document.getElementById('upd-memo').checked
-    const updTags    = document.getElementById('upd-tags').checked
+    const ruleAddress = document.getElementById('upd-address').value
+    const rulePhone   = document.getElementById('upd-phone').value
+    const ruleHours   = document.getElementById('upd-hours').value
+    const ruleMemo    = document.getElementById('upd-memo').value
+    const ruleTags    = document.getElementById('upd-tags').value
+
+    // 규칙에 따라 필드값 결정
+    function applyRule(rule, existVal, newVal) {
+      if (!newVal) return undefined
+      if (rule === 'skip')   return undefined
+      if (rule === 'always') return newVal
+      if (rule === 'empty')  return existVal ? undefined : newVal
+      if (rule === 'longer') return (newVal.length > (existVal??'').length) ? newVal : undefined
+      return undefined
+    }
 
     const BATCH = 5
     for (let i = 0; i < toUpdate.length; i += BATCH) {
@@ -706,29 +739,37 @@ btnUpload.onclick = async () => {
           const updateData = { updatedAt: serverTimestamp() }
           const existData  = exist.data
 
-          // 빈 필드만 채우기
-          if (updAddress && !existData.address   && r.address)   updateData.address   = r.address
-          if (updAddress && !existData.shortAddr  && r.shortAddr) updateData.shortAddr = r.shortAddr
-          if (updPhone   && !existData.phone      && r.phone)     updateData.phone     = r.phone
-          if (updHours   && !existData.hours      && r.hours)     updateData.hours     = r.hours
-          if (updMemo    && !existData.memo        && r.memo)      updateData.memo      = r.memo
+          const newAddr = applyRule(ruleAddress, existData.address, r.address)
+          const newShort = applyRule(ruleAddress, existData.shortAddr, r.shortAddr)
+          const newPhone = applyRule(rulePhone, existData.phone, r.phone)
+          const newHours = applyRule(ruleHours, existData.hours, r.hours)
+          const newMemo  = applyRule(ruleMemo,  existData.memo,  r.memo)
 
-          // 태그 추가 (기존 태그 유지하면서 새 태그만 추가)
-          if (updTags) {
-            const newTags = buildTagIds(r)
+          if (newAddr)  updateData.address   = newAddr
+          if (newShort) updateData.shortAddr  = newShort
+          if (newPhone) updateData.phone      = newPhone
+          if (newHours) updateData.hours      = newHours
+          if (newMemo)  updateData.memo       = newMemo
+
+          // 태그 처리
+          if (ruleTags !== 'skip') {
+            const newTags   = buildTagIds(r)
             const existTags = existData.tagIds ?? []
-            const toAdd = newTags.filter(t => !existTags.includes(t))
-            if (toAdd.length > 0) {
-              updateData.tagIds = [...existTags, ...toAdd]
+            if (ruleTags === 'merge') {
+              const toAdd = newTags.filter(t => !existTags.includes(t))
+              if (toAdd.length > 0) updateData.tagIds = [...existTags, ...toAdd]
+            } else if (ruleTags === 'always' && newTags.length > 0) {
+              updateData.tagIds = newTags
             }
           }
 
-          // 실제 업데이트할 내용이 있을 때만
           if (Object.keys(updateData).length > 1) {
             await updateDoc(doc(db, 'restaurants', exist.id), updateData)
             const fields = Object.keys(updateData).filter(k => k !== 'updatedAt').join(', ')
             done++
             log(`✓ [업데이트] ${r.name} → ${fields}`, 'ok')
+          } else {
+            log(`- [스킵] ${r.name} — 업데이트할 내용 없음`, 'skip')
           }
         } catch(e) {
           err++

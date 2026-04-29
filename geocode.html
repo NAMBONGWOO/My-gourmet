@@ -169,9 +169,7 @@ import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/fire
 import { getFirestore,
          collection, getDocs, updateDoc, doc,
          query, where }    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
-import { getAuth, GoogleAuthProvider,
-         onAuthStateChanged,
-         signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
 
 const firebaseConfig = {
   apiKey:            "AIzaSyCMkebK6mjc9cGdykCb8uvUNNebMW4v33w",
@@ -188,6 +186,7 @@ const KAKAO_REST_KEY = '58a1f4208531818dd32542ae5b426242'
 const app  = initializeApp(firebaseConfig)
 const db   = getFirestore(app)
 const auth = getAuth(app)
+setPersistence(auth, browserLocalPersistence).catch(e => console.warn('persistence error', e))
 
 let currentUser = null
 let allDocs     = []

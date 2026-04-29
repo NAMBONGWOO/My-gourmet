@@ -189,9 +189,7 @@ import { initializeApp }           from 'https://www.gstatic.com/firebasejs/10.1
 import { getFirestore,
          collection, getDocs, deleteDoc,
          query, where, doc }       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
-import { getAuth, GoogleAuthProvider,
-         onAuthStateChanged,
-         signInWithPopup }         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, setPersistence, browserLocalPersistence }         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
 
 // ★ Firebase 설정값 입력 ★
 const firebaseConfig = {
@@ -206,6 +204,7 @@ const firebaseConfig = {
 const app  = initializeApp(firebaseConfig)
 const db   = getFirestore(app)
 const auth = getAuth(app)
+setPersistence(auth, browserLocalPersistence).catch(e => console.warn('persistence error', e))
 
 let currentUser = null
 let allDocs     = []
