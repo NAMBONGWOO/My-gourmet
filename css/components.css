@@ -573,3 +573,49 @@
 @media (prefers-color-scheme: dark) {
   .error-box { color: #f5c4b3; background: rgba(107,61,61,.3); border-color: #6b3d3d; }
 }
+
+/* ══════════════════════════════════════════
+   반응형 — 컴포넌트
+══════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  /* 앱바 숨김 (탭바 사이드바가 로고 역할) */
+  .app-bar { display: none; }
+
+  /* 스크린 컨테이너 높이 조정 */
+  .screen-container {
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  /* FAB — 사이드바 공간 제외 */
+  .fab {
+    bottom: 24px;
+    right: 24px;
+    position: fixed;
+  }
+
+  /* 상세 화면 뒤로가기 버튼 위치 */
+  .detail-header {
+    padding: 16px 20px 12px;
+  }
+}
+
+@media (min-width: 1200px) {
+  /* 맥 — 탭바 더 넓게 */
+  .tab-item {
+    padding: 10px 24px;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 1024px) {
+  .app-bar { display: none; }
+  .fab {
+    bottom: 16px;
+    right: 16px;
+    position: fixed;
+  }
+  .screen-container {
+    height: 100vh;
+  }
+}
