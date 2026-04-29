@@ -454,7 +454,7 @@ function renderList(){
       </div>
       <!-- 활성 필터 표시 -->
       <div id="list-active-filters" style="padding:4px 16px 0;display:flex;gap:5px;flex-wrap:wrap;min-height:0;"></div>
-      <div style="padding:8px 16px 10px;">
+      <div style="padding:8px 16px 10px;" class="mobile-only-btn">
         <button id="btn-result-count" style="width:100%;padding:12px;background:var(--t1);color:var(--bg1);
           border:none;border-radius:var(--r-md);font-size:14px;font-weight:500;
           font-family:var(--font-body);cursor:pointer;">
