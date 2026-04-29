@@ -326,134 +326,175 @@ function renderTable() {
 
 function showDetail(r) {
   const panel = document.getElementById('detail-panel')
+  panel.innerHTML = ''
+  panel.style.display = 'block'
+
   const createdAt = r.createdAt?.seconds
     ? new Date(r.createdAt.seconds*1000).toLocaleString('ko-KR') : '없음'
   const updatedAt = r.updatedAt?.seconds
     ? new Date(r.updatedAt.seconds*1000).toLocaleString('ko-KR') : '없음'
 
-  const editableField = (label, key, val, type='text') => `
-    <div class="field-row">
-      <div class="field-label">${label}</div>
-      <div class="field-value" id="display-${key}">
-        ${val!=null&&val!==''?`<span class="field-ok">${val}</span>`:'<span class="field-empty">없음</span>'}
-        <button onclick="editField('${key}','${(val??'').replace(/'/g,"\'")}','${type}')"
-          style="margin-left:6px;font-size:10px;color:var(--gold);background:rgba(201,169,110,.1);
-          border:0.5px solid rgba(201,169,110,.3);padding:1px 6px;border-radius:4px;cursor:pointer;">✏️</button>
-      </div>
-      <div id="edit-${key}" style="display:none;">
-        ${type==='textarea'
-          ? `<textarea id="input-${key}" rows="3" style="width:100%;padding:6px;background:var(--bg2);
-              border:0.5px solid var(--gold);border-radius:4px;font-size:12px;color:var(--t1);
-              font-family:var(--font-body);resize:vertical;">${val??''}</textarea>`
-          : `<input id="input-${key}" type="${type}" value="${(val??'').toString().replace(/"/g,'&quot;')}"
-              style="width:100%;padding:6px;background:var(--bg2);border:0.5px solid var(--gold);
-              border-radius:4px;font-size:12px;color:var(--t1);font-family:var(--font-body);"/>`}
-        <div style="display:flex;gap:6px;margin-top:4px;">
-          <button onclick="saveField('${r.id}','${key}','${type}')"
-            style="flex:1;padding:5px;background:var(--gold);color:#fff;border:none;
-            border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font-body);">저장</button>
-          <button onclick="cancelField('${key}')"
-            style="flex:1;padding:5px;background:var(--bg3);color:var(--t2);
-            border:0.5px solid var(--bg5);border-radius:4px;font-size:11px;cursor:pointer;
-            font-family:var(--font-body);">취소</button>
-        </div>
-      </div>
-    </div>`
+  // 닫기 버튼
+  const closeBtn = document.createElement('div')
+  closeBtn.className = 'close-btn'
+  closeBtn.textContent = '×'
+  closeBtn.onclick = () => { panel.style.display = 'none' }
+  panel.appendChild(closeBtn)
 
-  panel.style.display = 'block'
-  panel.innerHTML = `
-    <div class="close-btn" id="close-detail">×</div>
-    <h3>${r.name}</h3>
-    <div style="font-size:10px;color:var(--t4);margin-bottom:16px;word-break:break-all;">ID: ${r.id}</div>
+  // 제목
+  const h3 = document.createElement('h3')
+  h3.textContent = r.name
+  panel.appendChild(h3)
 
-    ${editableField('상호명',   'name',      r.name)}
-    ${editableField('주소',     'address',   r.address)}
-    ${editableField('단축주소', 'shortAddr', r.shortAddr)}
-    ${editableField('전화번호', 'phone',     r.phone)}
-    ${editableField('영업시간', 'hours',     r.hours)}
-    ${editableField('위도',     'lat',       r.lat,  'number')}
-    ${editableField('경도',     'lng',       r.lng,  'number')}
-    ${editableField('평점',     'rating',    r.rating, 'number')}
-    ${editableField('메모',     'memo',      r.memo, 'textarea')}
+  const idDiv = document.createElement('div')
+  idDiv.style.cssText = 'font-size:10px;color:var(--t4);margin-bottom:16px;word-break:break-all;'
+  idDiv.textContent = 'ID: ' + r.id
+  panel.appendChild(idDiv)
 
-    <div class="field-row">
-      <div class="field-label">태그 (${(r.tagIds??[]).length}개)</div>
-      <div class="field-value">
-        ${(r.tagIds??[]).length
-          ? (r.tagIds??[]).map(t=>`<span class="tag-pill" style="margin:2px;">${t}</span>`).join('')
-          : '<span class="field-empty">없음</span>'}
-      </div>
-    </div>
+  // 편집 가능한 필드 생성 함수
+  function addEditableField(label, key, val, type='text') {
+    const row = document.createElement('div')
+    row.className = 'field-row'
 
-    <div class="field-row">
-      <div class="field-label">방문기록 (${(r.visitLog??[]).length}회)</div>
-      <div class="field-value">
-        ${(r.visitLog??[]).length
-          ? [...(r.visitLog??[])].reverse().map(v=>`
-            <div style="padding:8px;background:var(--bg2);border-radius:6px;margin-bottom:6px;">
-              <div style="display:flex;justify-content:space-between;">
-                <span style="font-size:11px;color:var(--t3);">${v.date??''}</span>
-                <span style="color:var(--gold);">${'★'.repeat(v.rating??0)}</span>
-              </div>
-              ${v.memo?`<div style="font-size:12px;color:var(--t2);margin-top:4px;">${v.memo}</div>`:''}
-            </div>`).join('')
-          : '<span class="field-empty">없음</span>'}
-      </div>
-    </div>
+    const lbl = document.createElement('div')
+    lbl.className = 'field-label'
+    lbl.textContent = label
+    row.appendChild(lbl)
 
-    ${field('등록일', createdAt)}
-    ${field('수정일', updatedAt)}
+    // 표시 영역
+    const display = document.createElement('div')
+    display.className = 'field-value'
+    display.id = 'display-' + key
 
-    <div style="margin-top:16px;">
-      <a href="index.html"
-        style="display:block;padding:10px;background:var(--gold);color:#fff;
-        border-radius:var(--r-sm);text-align:center;text-decoration:none;font-size:13px;font-weight:500;">
-        앱에서 보기 →
-      </a>
-    </div>`
+    const valSpan = document.createElement('span')
+    valSpan.className = val != null && val !== '' ? 'field-ok' : 'field-empty'
+    valSpan.textContent = val != null && val !== '' ? String(val) : '없음'
+    display.appendChild(valSpan)
 
-  document.getElementById('close-detail').onclick = () => { panel.style.display = 'none' }
+    const editBtn = document.createElement('button')
+    editBtn.textContent = '✏️'
+    editBtn.style.cssText = 'margin-left:6px;font-size:10px;color:var(--gold);background:rgba(201,169,110,.1);border:0.5px solid rgba(201,169,110,.3);padding:1px 6px;border-radius:4px;cursor:pointer;'
+    editBtn.onclick = () => { display.style.display = 'none'; editWrap.style.display = 'block'; input.focus() }
+    display.appendChild(editBtn)
+    row.appendChild(display)
 
-  window.editField = (key, val, type) => {
-    document.getElementById(`display-${key}`).style.display = 'none'
-    document.getElementById(`edit-${key}`).style.display = 'block'
-    const input = document.getElementById(`input-${key}`)
-    if (input) { input.value = val; input.focus() }
-  }
-  window.cancelField = (key) => {
-    document.getElementById(`display-${key}`).style.display = ''
-    document.getElementById(`edit-${key}`).style.display = 'none'
-  }
-  window.saveField = async (docId, key, type) => {
-    const input = document.getElementById(`input-${key}`)
-    if (!input) return
-    let val = input.value.trim()
-    if (type === 'number') val = val ? Number(val) : null
+    // 편집 영역
+    const editWrap = document.createElement('div')
+    editWrap.id = 'edit-' + key
+    editWrap.style.display = 'none'
 
-    try {
-      await updateDoc(doc(db, 'restaurants', docId), { [key]: val, updatedAt: serverTimestamp() })
-
-      // 로컬 데이터 업데이트
-      const idx = allData.findIndex(x => x.id === docId)
-      if (idx >= 0) { allData[idx][key] = val; r[key] = val }
-
-      // 표시 업데이트
-      const display = document.getElementById(`display-${key}`)
-      display.innerHTML = val != null && val !== ''
-        ? `<span class="field-ok">${val}</span>
-           <button onclick="editField('${key}','${String(val).replace(/'/g,"\'")}','${type}')"
-             style="margin-left:6px;font-size:10px;color:var(--gold);background:rgba(201,169,110,.1);
-             border:0.5px solid rgba(201,169,110,.3);padding:1px 6px;border-radius:4px;cursor:pointer;">✏️</button>`
-        : '<span class="field-empty">없음</span>'
-      display.style.display = ''
-      document.getElementById(`edit-${key}`).style.display = 'none'
-
-      // 테이블 행 업데이트
-      applyFilters()
-    } catch(e) {
-      alert('저장 실패: ' + e.message)
+    let input
+    if (type === 'textarea') {
+      input = document.createElement('textarea')
+      input.rows = 3
+      input.style.cssText = 'width:100%;padding:6px;background:var(--bg2);border:0.5px solid var(--gold);border-radius:4px;font-size:12px;color:var(--t1);font-family:var(--font-body);resize:vertical;box-sizing:border-box;'
+      input.value = val ?? ''
+    } else {
+      input = document.createElement('input')
+      input.type = type
+      input.style.cssText = 'width:100%;padding:6px;background:var(--bg2);border:0.5px solid var(--gold);border-radius:4px;font-size:12px;color:var(--t1);font-family:var(--font-body);box-sizing:border-box;'
+      input.value = val ?? ''
     }
+    input.id = 'input-' + key
+    editWrap.appendChild(input)
+
+    const btnRow = document.createElement('div')
+    btnRow.style.cssText = 'display:flex;gap:6px;margin-top:4px;'
+
+    const saveBtn = document.createElement('button')
+    saveBtn.textContent = '저장'
+    saveBtn.style.cssText = 'flex:1;padding:5px;background:var(--gold);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font-body);'
+    saveBtn.onclick = async () => {
+      let newVal = input.value.trim()
+      if (type === 'number') newVal = newVal ? Number(newVal) : null
+      try {
+        await updateDoc(doc(db, 'restaurants', r.id), { [key]: newVal, updatedAt: serverTimestamp() })
+        const idx = allData.findIndex(x => x.id === r.id)
+        if (idx >= 0) allData[idx][key] = newVal
+        r[key] = newVal
+        valSpan.className = newVal != null && newVal !== '' ? 'field-ok' : 'field-empty'
+        valSpan.textContent = newVal != null && newVal !== '' ? String(newVal) : '없음'
+        display.style.display = ''
+        editWrap.style.display = 'none'
+        applyFilters()
+      } catch(e) { alert('저장 실패: ' + e.message) }
+    }
+    btnRow.appendChild(saveBtn)
+
+    const cancelBtn = document.createElement('button')
+    cancelBtn.textContent = '취소'
+    cancelBtn.style.cssText = 'flex:1;padding:5px;background:var(--bg3);color:var(--t2);border:0.5px solid var(--bg5);border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font-body);'
+    cancelBtn.onclick = () => { display.style.display = ''; editWrap.style.display = 'none' }
+    btnRow.appendChild(cancelBtn)
+
+    editWrap.appendChild(btnRow)
+    row.appendChild(editWrap)
+    panel.appendChild(row)
   }
+
+  addEditableField('상호명',   'name',      r.name)
+  addEditableField('주소',     'address',   r.address)
+  addEditableField('단축주소', 'shortAddr', r.shortAddr)
+  addEditableField('전화번호', 'phone',     r.phone)
+  addEditableField('영업시간', 'hours',     r.hours)
+  addEditableField('위도',     'lat',       r.lat,    'number')
+  addEditableField('경도',     'lng',       r.lng,    'number')
+  addEditableField('평점',     'rating',    r.rating, 'number')
+  addEditableField('메모',     'memo',      r.memo,   'textarea')
+
+  // 태그
+  const tagRow = document.createElement('div')
+  tagRow.className = 'field-row'
+  tagRow.innerHTML = `<div class="field-label">태그 (${(r.tagIds??[]).length}개)</div>
+    <div class="field-value">${(r.tagIds??[]).length
+      ? (r.tagIds??[]).map(t=>`<span class="tag-pill" style="margin:2px;">${t}</span>`).join('')
+      : '<span class="field-empty">없음</span>'}</div>`
+  panel.appendChild(tagRow)
+
+  // 방문기록
+  const visitRow = document.createElement('div')
+  visitRow.className = 'field-row'
+  visitRow.innerHTML = `<div class="field-label">방문기록 (${(r.visitLog??[]).length}회)</div>
+    <div class="field-value">${(r.visitLog??[]).length
+      ? [...(r.visitLog??[])].reverse().map(v=>`
+        <div style="padding:8px;background:var(--bg2);border-radius:6px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:11px;color:var(--t3);">${v.date??''}</span>
+            <span style="color:var(--gold);">${'★'.repeat(v.rating??0)}</span>
+          </div>
+          ${v.memo?`<div style="font-size:12px;color:var(--t2);margin-top:4px;">${v.memo}</div>`:''}
+        </div>`).join('')
+      : '<span class="field-empty">없음</span>'}</div>`
+  panel.appendChild(visitRow)
+
+  // 등록/수정일
+  ;[['등록일', createdAt],['수정일', updatedAt]].forEach(([label, val]) => {
+    const row = document.createElement('div')
+    row.className = 'field-row'
+    row.innerHTML = `<div class="field-label">${label}</div>
+      <div class="field-value"><span class="field-ok">${val}</span></div>`
+    panel.appendChild(row)
+  })
+
+  // 앱에서 보기
+  const linkDiv = document.createElement('div')
+  linkDiv.style.marginTop = '16px'
+  linkDiv.innerHTML = `<a href="index.html"
+    style="display:block;padding:10px;background:var(--gold);color:#fff;
+    border-radius:var(--r-sm);text-align:center;text-decoration:none;font-size:13px;font-weight:500;">
+    앱에서 보기 →</a>`
+  panel.appendChild(linkDiv)
+
+  // 외부 클릭으로 닫기
+  setTimeout(() => {
+    document.addEventListener('click', function outsideClick(e) {
+      if (!panel.contains(e.target)) {
+        panel.style.display = 'none'
+        document.removeEventListener('click', outsideClick)
+      }
+    })
+  }, 100)
+
 }
 
 function field(label, value) {
