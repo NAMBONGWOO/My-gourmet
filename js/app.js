@@ -850,6 +850,7 @@ function renderMy(){
         <a href="upload.html"    style="${menuStyle}">📂 데이터 업로드</a>
         <a href="geocode.html"   style="${menuStyle}">🗺️ 주소 → 좌표 변환</a>
         <a href="duplicate.html" style="${menuStyle}">🔍 중복 관리</a>
+        <a href="viewer.html"    style="${menuStyle}">📊 데이터 뷰어</a>
       </div>
       <button id="btn-signout" style="width:100%;padding:13px;background:var(--bg3);color:var(--t3);
         border:0.5px solid var(--bg5);border-radius:var(--r-md);font-size:14px;font-weight:500;
