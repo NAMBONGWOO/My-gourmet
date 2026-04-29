@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ko" class="page-scroll">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MGA — URL 스크래퍼</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/tokens.css"/>
+  <style>
+    body{background:var(--bg0);color:var(--t1);min-height:100vh;font-family:var(--font-body);}
+    .top-bar{position:sticky;top:0;z-index:100;background:var(--bg1);border-bottom:0.5px solid var(--bg5);
+      padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+    .logo{font-family:var(--font-display);font-size:18px;}
+    .logo span{color:var(--gold);}
+    .container{max-width:760px;margin:0 auto;padding:20px 16px 80px;}
+    .card{background:var(--bg2);border:0.5px solid var(--bg5);border-radius:var(--r-md);padding:16px;margin-bottom:14px;}
+    .card-title{font-size:12px;font-weight:500;color:var(--t2);margin-bottom:12px;letter-spacing:.04em;}
+    .btn{padding:9px 18px;border-radius:var(--r-md);font-size:13px;font-weight:500;
+      font-family:var(--font-body);cursor:pointer;border:0.5px solid var(--bg5);}
+    .btn-gold{background:var(--gold);color:#fff;border-color:var(--gold);}
+    .btn-gold:disabled{opacity:.5;cursor:not-allowed;}
+    .btn-ghost{background:var(--bg3);color:var(--t2);}
+    .input-field{width:100%;padding:9px 12px;background:var(--bg1);border:0.5px solid var(--bg5);
+      border-radius:var(--r-sm);font-size:13px;color:var(--t1);font-family:var(--font-body);outline:none;}
+    .input-field:focus{border-color:var(--gold);}
+    textarea.input-field{resize:vertical;min-height:100px;line-height:1.7;}
+    .result-item{padding:12px 0;border-bottom:0.5px solid var(--bg5);}
+    .result-item:last-child{border-bottom:none;}
+    .rest-name{font-size:14px;font-weight:500;color:var(--t1);margin-bottom:3px;}
+    .rest-addr{font-size:12px;color:var(--t3);margin-bottom:6px;}
+    .tag-pill{display:inline-block;padding:2px 8px;border-radius:var(--r-pill);font-size:11px;
+      font-weight:500;margin:2px;border:0.5px solid transparent;}
+    .tag-food{background:#ede9fe;color:#3C3489;border-color:#c4b5fd;}
+    .tag-src{background:#fef3c7;color:#633806;border-color:#fcd34d;}
+    .tag-stat{background:#f3e8ff;color:#5b21b6;border-color:#d8b4fe;}
+    .completeness-bar{height:4px;background:var(--bg4);border-radius:2px;margin-top:6px;overflow:hidden;}
+    .completeness-fill{height:100%;border-radius:2px;background:var(--gold);}
+    .comp-label{font-size:10px;color:var(--t3);margin-top:3px;}
+    .badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500;}
+    .badge-new{background:#c8f0e0;color:#1a5c3a;border:0.5px solid #5aad80;}
+    .badge-dup{background:#fef3c7;color:#633806;border:0.5px solid #fcd34d;}
+    .badge-fail{background:#ffd5d5;color:#8b1a1a;border:0.5px solid #e08080;}
+    .log-box{background:var(--bg0);border:0.5px solid var(--bg5);border-radius:var(--r-sm);
+      padding:10px;height:140px;overflow-y:auto;font-size:11px;font-family:monospace;color:var(--t3);}
+    .log-ok{color:#9fe1cb;} .log-err{color:#f5c4b3;} .log-info{color:var(--gold);}
+    .spinner{width:20px;height:20px;border:2px solid var(--bg5);border-top-color:var(--gold);
+      border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .step-badge{display:inline-block;width:20px;height:20px;border-radius:50%;background:var(--gold);
+      color:#fff;font-size:11px;font-weight:500;text-align:center;line-height:20px;margin-right:6px;flex-shrink:0;}
+    .api-key-notice{padding:10px 12px;background:rgba(201,169,110,.07);border:0.5px solid rgba(201,169,110,.2);
+      border-radius:var(--r-sm);font-size:12px;color:var(--t2);line-height:1.7;}
+    .check-row{display:flex;align-items:flex-start;gap:10px;}
+    .check-col{padding-top:1px;flex-shrink:0;}
+    .info-col{flex:1;min-width:0;}
+    .status-col{flex-shrink:0;}
+    #login-wrap{text-align:center;padding:80px 20px;}
+    .btn-google{display:inline-flex;align-items:center;gap:10px;padding:13px 28px;
+      background:var(--gold);color:#fff;border:none;border-radius:var(--r-md);
+      font-size:15px;font-weight:500;font-family:var(--font-body);cursor:pointer;}
+    .auth-loading{text-align:center;padding:80px 20px;}
+  </style>
+</head>
+<body>
+
+<div id="auth-loading" class="auth-loading">
+  <div style="font-family:var(--font-display);font-size:24px;margin-bottom:20px;">
+    My Gourmet<span style="color:var(--gold);">.</span>
+  </div>
+  <div style="width:32px;height:32px;border:2px solid var(--bg5);border-top-color:var(--gold);
+    border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px;"></div>
+  <div style="font-size:13px;color:var(--t3);">로그인 확인 중…</div>
+</div>
+
+<div id="login-wrap" style="display:none;">
+  <div style="font-family:var(--font-display);font-size:24px;margin-bottom:6px;">
+    My Gourmet<span style="color:var(--gold);">.</span>
+  </div>
+  <div style="font-size:13px;color:var(--t3);margin-bottom:24px;">로그인이 필요합니다</div>
+  <button class="btn-google" id="btn-login">Google로 로그인</button>
+</div>
+
+<div id="main-wrap" style="display:none;">
+  <div class="top-bar">
+    <div class="logo">My Gourmet<span>.</span>
+      <span style="font-size:13px;font-weight:400;color:var(--t3);font-family:var(--font-body);"> URL 스크래퍼</span>
+    </div>
+    <a href="index.html" style="font-size:12px;color:var(--t3);text-decoration:none;">← 앱으로</a>
+  </div>
+
+  <div class="container">
+
+    <!-- API 키 설정 -->
+    <div class="card">
+      <div class="card-title">⚙️ Claude API 설정</div>
+      <div class="api-key-notice" style="margin-bottom:10px;">
+        Claude API 키가 필요합니다. <a href="https://console.anthropic.com" target="_blank"
+          style="color:var(--gold);">console.anthropic.com</a> 에서 발급 후 입력해주세요.
+        키는 브라우저에만 저장되며 외부로 전송되지 않습니다.
+      </div>
+      <div style="display:flex;gap:8px;">
+        <input class="input-field" id="api-key-input" type="password"
+          placeholder="sk-ant-api03-..." style="flex:1;"/>
+        <button class="btn btn-ghost" id="btn-save-key">저장</button>
+      </div>
+      <div id="key-status" style="font-size:11px;color:var(--t3);margin-top:6px;"></div>
+    </div>
+
+    <!-- URL 입력 -->
+    <div class="card">
+      <div style="display:flex;align-items:center;margin-bottom:12px;">
+        <span class="step-badge">1</span>
+        <span style="font-size:13px;font-weight:500;">URL 입력</span>
+        <span style="font-size:11px;color:var(--t3);margin-left:8px;">한 줄에 하나씩</span>
+      </div>
+      <textarea class="input-field" id="url-input"
+        placeholder="https://blog.naver.com/...&#10;https://www.youtube.com/watch?v=...&#10;https://tistory.com/entry/..."></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:12px;color:var(--t3);" id="url-count">0개 입력됨</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost" id="btn-clear-url">초기화</button>
+          <button class="btn btn-gold" id="btn-analyze">AI 분석 시작</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 분석 진행 -->
+    <div class="card" id="progress-card" style="display:none;">
+      <div style="display:flex;align-items:center;margin-bottom:12px;">
+        <span class="step-badge">2</span>
+        <span style="font-size:13px;font-weight:500;">분석 진행</span>
+      </div>
+      <div class="log-box" id="log-box"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
+        <div id="progress-stat" style="font-size:12px;color:var(--t3);flex:1;"></div>
+        <button class="btn btn-ghost" id="btn-stop" style="display:none;">중단</button>
+      </div>
+    </div>
+
+    <!-- 결과 -->
+    <div class="card" id="result-card" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;">
+          <span class="step-badge">3</span>
+          <span style="font-size:13px;font-weight:500;">결과 확인 및 저장</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="result-badges"></div>
+      </div>
+
+      <!-- 중복 경고 -->
+      <div id="dup-notice" style="display:none;padding:8px 10px;background:rgba(201,169,110,.07);
+        border:0.5px solid rgba(201,169,110,.2);border-radius:var(--r-sm);
+        font-size:12px;color:var(--t2);margin-bottom:12px;"></div>
+
+      <div id="result-list"></div>
+
+      <div style="border-top:0.5px solid var(--bg5);padding-top:12px;margin-top:4px;
+        display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+        <button class="btn btn-ghost" id="btn-select-all">전체 선택</button>
+        <button class="btn btn-gold" id="btn-save-selected">선택 항목 저장</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
+import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, setPersistence, browserLocalPersistence }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+
+const firebaseConfig = {
+  apiKey:"AIzaSyCMkebK6mjc9cGdykCb8uvUNNebMW4v33w",
+  authDomain:"my-gourmet-5cf8c.firebaseapp.com",
+  projectId:"my-gourmet-5cf8c",
+  storageBucket:"my-gourmet-5cf8c.firebasestorage.app",
+  messagingSenderId:"696974063978",
+  appId:"1:696974063978:web:b86a0f4aef907517c18d13"
+}
+
+const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
+const db   = getFirestore(app)
+const auth = getAuth(app)
+setPersistence(auth, browserLocalPersistence).catch(()=>{})
+
+let currentUser = null
+let results     = []
+let stopFlag    = false
+
+// 로그인
+document.getElementById('auth-loading').style.display = 'block'
+document.getElementById('login-wrap').style.display   = 'none'
+document.getElementById('main-wrap').style.display    = 'none'
+
+onAuthStateChanged(auth, user => {
+  document.getElementById('auth-loading').style.display = 'none'
+  if (user) {
+    currentUser = user
+    document.getElementById('main-wrap').style.display  = 'block'
+    document.getElementById('login-wrap').style.display = 'none'
+    loadApiKey()
+  } else {
+    document.getElementById('login-wrap').style.display = 'block'
+    document.getElementById('main-wrap').style.display  = 'none'
+  }
+})
+document.getElementById('btn-login').onclick = () => signInWithPopup(auth, new GoogleAuthProvider())
+
+// API 키 관리
+function loadApiKey() {
+  const key = localStorage.getItem('mga_claude_key') || ''
+  document.getElementById('api-key-input').value = key
+  document.getElementById('key-status').textContent = key ? '✓ API 키 저장됨' : ''
+}
+document.getElementById('btn-save-key').onclick = () => {
+  const key = document.getElementById('api-key-input').value.trim()
+  localStorage.setItem('mga_claude_key', key)
+  document.getElementById('key-status').textContent = key ? '✓ API 키 저장됨' : '삭제됨'
+}
+
+// URL 입력 카운트
+document.getElementById('url-input').addEventListener('input', e => {
+  const urls = getUrls()
+  document.getElementById('url-count').textContent = `${urls.length}개 입력됨`
+})
+document.getElementById('btn-clear-url').onclick = () => {
+  document.getElementById('url-input').value = ''
+  document.getElementById('url-count').textContent = '0개 입력됨'
+}
+
+function getUrls() {
+  return document.getElementById('url-input').value
+    .split('\n').map(l => l.trim()).filter(l => l.startsWith('http'))
+}
+
+function log(msg, type='') {
+  const box = document.getElementById('log-box')
+  const div = document.createElement('div')
+  div.className = type ? `log-${type}` : ''
+  div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`
+  box.appendChild(div)
+  box.scrollTop = box.scrollHeight
+}
+
+// AI 분석
+document.getElementById('btn-analyze').onclick = async () => {
+  const apiKey = localStorage.getItem('mga_claude_key')
+  if (!apiKey) { alert('Claude API 키를 먼저 입력해주세요'); return }
+  const urls = getUrls()
+  if (!urls.length) { alert('URL을 입력해주세요'); return }
+
+  stopFlag = false
+  results  = []
+  document.getElementById('progress-card').style.display = 'block'
+  document.getElementById('result-card').style.display   = 'none'
+  document.getElementById('log-box').innerHTML = ''
+  document.getElementById('btn-analyze').disabled = true
+  document.getElementById('btn-stop').style.display = 'inline-block'
+
+  log(`분석 시작: ${urls.length}개 URL`, 'info')
+
+  // 기존 DB 로드 (중복 체크용)
+  const snap = await getDocs(query(collection(db,'restaurants'), where('userId','==',currentUser.uid)))
+  const existingNames = new Set(snap.docs.map(d => normalize(d.data().name)))
+
+  let done = 0
+  for (const url of urls) {
+    if (stopFlag) { log('중단됨', 'info'); break }
+    log(`분석 중: ${url.slice(0,60)}…`)
+    document.getElementById('progress-stat').textContent = `${done+1} / ${urls.length} 처리 중`
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-beta': 'web-search-2025-03-05'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{
+            role: 'user',
+            content: `다음 URL의 내용을 분석해서 식당 정보를 JSON으로 추출해주세요. 
+URL: ${url}
+
+반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요:
+{
+  "restaurants": [
+    {
+      "name": "식당명",
+      "address": "전체 주소 (도로명 주소 우선)",
+      "shortAddr": "시/구/동 단위 짧은 주소",
+      "phone": "전화번호 또는 null",
+      "hours": "영업시간 또는 null",
+      "menu": "대표 메뉴 또는 null",
+      "tags": ["food__한식", "source__백반기행"],
+      "memo": "핵심 내용 한 줄 요약",
+      "completeness": 0~100
+    }
+  ]
+}`
+          }]
+        })
+      })
+
+      if (!res.ok) throw new Error(`API 오류: ${res.status}`)
+      const data = await res.json()
+
+      // 텍스트 블록에서 JSON 추출
+      const textBlock = data.content?.find(b => b.type === 'text')
+      if (!textBlock) throw new Error('응답 없음')
+
+      const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('JSON 파싱 실패')
+
+      const parsed = JSON.parse(jsonMatch[0])
+      const restaurants = parsed.restaurants ?? []
+
+      for (const r of restaurants) {
+        const isDup = existingNames.has(normalize(r.name))
+        results.push({ ...r, url, isDup, selected: !isDup })
+        log(`✓ ${r.name} (${r.shortAddr || r.address || '주소없음'}) ${isDup ? '[중복]' : '[신규]'}`, 'ok')
+      }
+      if (!restaurants.length) log(`- 식당 정보 없음: ${url.slice(0,40)}`, '')
+
+    } catch(e) {
+      log(`✗ 실패: ${e.message}`, 'err')
+      results.push({ name:'추출 실패', address:'', url, isDup:false, selected:false, error:true, completeness:0 })
+    }
+
+    done++
+    await new Promise(r => setTimeout(r, 500))
+  }
+
+  document.getElementById('btn-analyze').disabled = false
+  document.getElementById('btn-stop').style.display = 'none'
+  document.getElementById('progress-stat').textContent = `완료: ${done}개 URL 처리`
+  log(`완료! ${results.filter(r=>!r.error&&!r.isDup).length}개 신규 식당 발견`, 'info')
+
+  renderResults()
+}
+
+document.getElementById('btn-stop').onclick = () => { stopFlag = true }
+
+function normalize(name) {
+  return (name ?? '').replace(/\s/g,'').toLowerCase()
+}
+
+function renderResults() {
+  const card = document.getElementById('result-card')
+  card.style.display = 'block'
+
+  const newCount  = results.filter(r => !r.error && !r.isDup).length
+  const dupCount  = results.filter(r => !r.error && r.isDup).length
+  const failCount = results.filter(r => r.error).length
+
+  document.getElementById('result-badges').innerHTML = `
+    <span class="badge badge-new">신규 ${newCount}개</span>
+    ${dupCount ? `<span class="badge badge-dup">중복 ${dupCount}개</span>` : ''}
+    ${failCount ? `<span class="badge badge-fail">실패 ${failCount}개</span>` : ''}`
+
+  if (dupCount) {
+    document.getElementById('dup-notice').style.display = 'block'
+    document.getElementById('dup-notice').textContent =
+      `중복 항목 ${dupCount}개는 기본적으로 선택 해제됩니다. 필요하면 체크 후 저장 시 업데이트 모드로 처리됩니다.`
+  }
+
+  document.getElementById('result-list').innerHTML = results.map((r, i) => {
+    if (r.error) return `
+      <div class="result-item" style="opacity:.5;">
+        <div class="check-row">
+          <div class="check-col"><input type="checkbox" disabled style="width:14px;height:14px;"/></div>
+          <div class="info-col">
+            <div class="rest-name" style="color:var(--t3);">추출 실패</div>
+            <div class="rest-addr">${r.url?.slice(0,60)}…</div>
+          </div>
+          <div class="status-col"><span class="badge badge-fail">실패</span></div>
+        </div>
+      </div>`
+
+    const comp = r.completeness ?? calcCompleteness(r)
+    const compColor = comp >= 70 ? '#1D9E75' : comp >= 40 ? '#BA7517' : '#E24B4A'
+    const tags = (r.tags ?? []).map(t => {
+      const cat = t.split('__')[0], label = t.split('__')[1] ?? t
+      const cls = cat === 'food' ? 'tag-food' : cat === 'source' ? 'tag-src' : 'tag-stat'
+      return `<span class="tag-pill ${cls}">${label}</span>`
+    }).join('')
+
+    return `
+      <div class="result-item">
+        <div class="check-row">
+          <div class="check-col" style="padding-top:2px;">
+            <input type="checkbox" data-idx="${i}" ${r.selected?'checked':''}
+              style="accent-color:var(--gold);width:14px;height:14px;"/>
+          </div>
+          <div class="info-col">
+            <div class="rest-name">${r.name}</div>
+            <div class="rest-addr">${r.address || r.shortAddr || '주소 없음'}</div>
+            ${r.menu ? `<div style="font-size:11px;color:var(--t2);margin-top:2px;">메뉴: ${r.menu}</div>` : ''}
+            ${tags ? `<div style="margin-top:5px;">${tags}</div>` : ''}
+            <div class="completeness-bar">
+              <div class="completeness-fill" style="width:${comp}%;background:${compColor};"></div>
+            </div>
+            <div class="comp-label">정보 완성도 ${comp}% ${comp<50?'— 저장 후 수동 보완 필요':''}</div>
+          </div>
+          <div class="status-col" style="padding-top:2px;">
+            <span class="badge ${r.isDup?'badge-dup':'badge-new'}">${r.isDup?'중복':'신규'}</span>
+          </div>
+        </div>
+      </div>`
+  }).join('')
+
+  document.getElementById('result-list').querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => { results[Number(cb.dataset.idx)].selected = cb.checked })
+  })
+
+  updateSaveBtn()
+}
+
+function calcCompleteness(r) {
+  let score = 0
+  if (r.name)    score += 25
+  if (r.address) score += 30
+  if (r.phone)   score += 20
+  if (r.hours)   score += 15
+  if ((r.tags??[]).length) score += 10
+  return score
+}
+
+function updateSaveBtn() {
+  const cnt = results.filter(r => r.selected).length
+  document.getElementById('btn-save-selected').textContent = `선택 항목 저장 (${cnt}개)`
+}
+
+document.getElementById('btn-select-all').onclick = () => {
+  const allSel = results.every(r => r.selected || r.error)
+  results.forEach(r => { if (!r.error) r.selected = !allSel })
+  renderResults()
+}
+
+// 저장
+document.getElementById('btn-save-selected').onclick = async () => {
+  const toSave = results.filter(r => r.selected && !r.error)
+  if (!toSave.length) { alert('저장할 항목을 선택해주세요'); return }
+
+  const btn = document.getElementById('btn-save-selected')
+  btn.disabled = true; btn.textContent = '저장 중…'
+
+  // 기존 DB 다시 로드
+  const snap = await getDocs(query(collection(db,'restaurants'), where('userId','==',currentUser.uid)))
+  const existMap = {}
+  snap.docs.forEach(d => { existMap[normalize(d.data().name)] = { id: d.id, data: d.data() } })
+
+  let saved = 0, updated = 0, failed = 0
+
+  for (const r of toSave) {
+    try {
+      const key = normalize(r.name)
+      const tagIds = r.tags ?? []
+
+      if (existMap[key] && r.isDup) {
+        // 업데이트 모드
+        const exist = existMap[key]
+        const upd = { updatedAt: serverTimestamp() }
+        if (!exist.data.address && r.address) upd.address = r.address
+        if (!exist.data.phone   && r.phone)   upd.phone   = r.phone
+        if (!exist.data.hours   && r.hours)   upd.hours   = r.hours
+        if (tagIds.length) {
+          const merged = [...new Set([...(exist.data.tagIds??[]), ...tagIds])]
+          upd.tagIds = merged
+        }
+        await updateDoc(doc(db,'restaurants',exist.id), upd)
+        updated++
+      } else {
+        // 신규 저장
+        await addDoc(collection(db,'restaurants'), {
+          userId: currentUser.uid, name: r.name, address: r.address ?? '',
+          shortAddr: r.shortAddr ?? '', phone: r.phone ?? '', hours: r.hours ?? '',
+          memo: r.memo ?? '', tagIds, lat: null, lng: null,
+          rating: null, visitLog: [], source: 'scraper', sourceUrl: r.url,
+          createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        })
+        saved++
+      }
+    } catch(e) { failed++; console.error(e) }
+  }
+
+  btn.disabled = false
+  const msg = `완료! 신규 ${saved}개 저장 / 업데이트 ${updated}개${failed ? ` / 실패 ${failed}개` : ''}`
+  alert(msg)
+  btn.textContent = `저장 완료`
+}
+</script>
+</body>
+</html>
