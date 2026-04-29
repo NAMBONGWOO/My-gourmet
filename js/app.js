@@ -428,8 +428,114 @@ function renderGrid(filtered){
   }).join('')
   grid.addEventListener('click', e=>{
     const card=e.target.closest('.grid-card'); if(!card) return
-    const r=state.restaurants.find(x=>x.id===card.dataset.id); if(r) navigate('detail',r)
+    const r=state.restaurants.find(x=>x.id===card.dataset.id); if(r) openHomeSheet(r)
   })
+}
+
+// 홈 카드 → 슬라이드업 시트
+function openHomeSheet(r){
+  // 기존 시트 제거
+  const existing = document.getElementById('home-sheet')
+  if(existing) existing.remove()
+
+  const sheet = document.createElement('div')
+  sheet.id = 'home-sheet'
+  sheet.style.cssText = `position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:var(--bg1);border-radius:20px 20px 0 0;
+    border-top:0.5px solid var(--bg5);
+    padding:0 0 40px;
+    box-shadow:0 -4px 20px rgba(0,0,0,.15);
+    transform:translateY(100%);transition:transform 280ms cubic-bezier(.32,.72,0,1);`
+
+  const catId=(r.tagIds??[]).find(id=>TAG_MAP[id])?.split('__')[0]??'food'
+  const ACCENT={food:'#5f3dc4',purpose:'#1864ab',space:'#7a5800',source:'#7d3800',facility:'#1a5c2a',status:'#6a0dad'}
+  const accent=ACCENT[catId]??'#c9a96e'
+  const tags=(r.tagIds??[]).slice(0,4).map(id=>makeTagChip(id,{size:'md'})).join('')
+  const kakaoUrl=`https://map.kakao.com/link/search/${encodeURIComponent(r.address||r.name)}`
+
+  sheet.innerHTML = `
+    <div style="display:flex;justify-content:center;padding:10px 0 6px;">
+      <div style="width:36px;height:4px;background:var(--bg5);border-radius:2px;"></div>
+    </div>
+    <div style="padding:12px 20px 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:17px;font-weight:500;color:var(--t1);margin-bottom:4px;
+            border-left:3px solid ${accent};padding-left:10px;">
+            ${r.name}
+          </div>
+          ${r.address?`
+            <div style="display:flex;align-items:center;gap:6px;margin-left:13px;">
+              <span style="font-size:12px;color:var(--t3);">📍 ${r.address}</span>
+            </div>`:''}
+          ${r.phone?`
+            <div style="margin-left:13px;margin-top:3px;">
+              <span style="font-size:12px;color:var(--t3);">📞 ${r.phone}</span>
+            </div>`:''}
+          ${r.hours?`
+            <div style="margin-left:13px;margin-top:3px;">
+              <span style="font-size:12px;color:var(--t3);">🕐 ${r.hours}</span>
+            </div>`:''}
+        </div>
+        ${r.rating?`
+          <div style="text-align:center;flex-shrink:0;">
+            <div style="font-size:22px;font-weight:500;color:var(--gold);">${r.rating.toFixed(1)}</div>
+            <div style="font-size:10px;color:var(--t3);">내 평점</div>
+          </div>`:''}
+      </div>
+
+      ${tags?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">${tags}</div>`:''}
+
+      ${r.memo?`
+        <div style="padding:10px 12px;background:var(--bg2);border-radius:var(--r-sm);
+          font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:12px;">
+          ${r.memo}
+        </div>`:''}
+
+      <div style="display:flex;gap:8px;">
+        <a href="${kakaoUrl}" target="_blank"
+          style="flex:1;padding:12px;background:var(--gold);color:#fff;
+          border-radius:var(--r-md);text-align:center;text-decoration:none;
+          font-size:14px;font-weight:500;">
+          길찾기
+        </a>
+        ${r.phone?`
+          <a href="tel:${r.phone}"
+            style="padding:12px 16px;background:var(--bg3);color:var(--t1);
+            border:0.5px solid var(--bg5);border-radius:var(--r-md);
+            text-decoration:none;font-size:14px;font-weight:500;">
+            전화
+          </a>`:''}
+        <button id="sheet-detail-btn"
+          style="padding:12px 16px;background:var(--bg3);color:var(--t1);
+          border:0.5px solid var(--bg5);border-radius:var(--r-md);
+          font-size:14px;font-weight:500;font-family:var(--font-body);cursor:pointer;">
+          자세히
+        </button>
+      </div>
+    </div>`
+
+  document.getElementById('app').appendChild(sheet)
+
+  // 애니메이션
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{ sheet.style.transform='translateY(0)' })
+  })
+
+  // 자세히 보기
+  sheet.querySelector('#sheet-detail-btn').addEventListener('click', ()=>{
+    sheet.remove()
+    navigate('detail', r)
+  })
+
+  // 외부 터치로 닫기
+  const backdrop = document.createElement('div')
+  backdrop.style.cssText = `position:fixed;inset:0;z-index:199;background:rgba(0,0,0,.3);`
+  backdrop.addEventListener('click', ()=>{
+    sheet.style.transform='translateY(100%)'
+    setTimeout(()=>{ sheet.remove(); backdrop.remove() }, 280)
+  })
+  document.getElementById('app').insertBefore(backdrop, sheet)
 }
 
 /* ══════════════════════════════════════════
@@ -645,11 +751,15 @@ function renderListCards(list){
     const catId=(r.tagIds??[]).find(id=>TAG_MAP[id])?.split('__')[0]??'food'
     const accent=ACCENT[catId]??'#c9a96e'
     const tags=(r.tagIds??[]).slice(0,2).map(id=>makeTagChip(id)).join('')
-    return `<div class="grid-card" data-id="${r.id}" style="border-left:2.5px solid ${accent};">
-      <div class="grid-card-name">${r.name}</div>
-      <div class="grid-card-addr">${r.shortAddr||r.address||''}</div>
-      <div class="grid-card-tags">${tags}</div>
-      ${r.rating?`<div style="font-size:11px;color:var(--gold);margin-top:4px;">★ ${r.rating.toFixed(1)}</div>`:''}</div>`
+    return `<div class="grid-card" data-id="${r.id}" style="border-left:2.5px solid ${accent};border-radius:0;">
+      <div class="grid-card-info">
+        <div class="grid-card-name">${r.name}</div>
+        <div class="grid-card-addr">${r.shortAddr||r.address||''}</div>
+        <div class="grid-card-tags">${tags}</div>
+      </div>
+      ${r.rating?`<span style="font-size:12px;color:var(--gold);flex-shrink:0;">★ ${r.rating.toFixed(1)}</span>`:
+        `<span style="font-size:10px;color:var(--t4);flex-shrink:0;">→</span>`}
+    </div>`
   }).join('')}</div>`
 }
 
