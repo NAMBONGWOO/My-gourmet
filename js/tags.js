@@ -65,7 +65,7 @@ const TAG_CATEGORIES = [
     id:'source', num:'04', name:'검증 출처', isMultiple:true,
     groups:[
       { label:'📺 방송 프로그램', tags:[
-        {id:'source__식객허영만',      label:'백반기행'},
+        {id:'source__백반기행',        label:'백반기행'},
         {id:'source__수요미식회',      label:'수요미식회'},
         {id:'source__맛있는녀석들',    label:'맛있는녀석들'},
         {id:'source__생활의달인',      label:'생활의달인'},
