@@ -303,8 +303,26 @@
 
 .list-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+/* 리스트 카드 — 1열일 때 가로형 */
+.list-grid .grid-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.list-grid .grid-card-info {
+  flex: 1;
+  min-width: 0;
+}
+.list-grid .grid-card-name {
+  margin-bottom: 2px;
+}
+.list-grid .grid-card-tags {
+  margin-bottom: 0;
 }
 
 /* 필터 패널 */
@@ -498,7 +516,11 @@
   }
 
   .list-grid {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .list-grid .grid-card {
+    display: block;
+    padding: 11px 11px 10px;
   }
 
   /* 마이 화면 */
@@ -542,7 +564,7 @@
   }
 
   .list-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   /* 상세 페이지 — 우측 패널 */
