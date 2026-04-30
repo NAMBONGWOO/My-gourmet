@@ -126,7 +126,7 @@ function renderHome(){
   const radiusText=nearby.radius!=null?` (반경 ${nearby.radius.toFixed(1)}km)`:''
   $('screen-container').innerHTML=`
     <div class="home-screen screen-enter">
-      <div class="filter-bar" style="padding:8px 0 0;">
+      <div class="filter-bar">
         <div class="filter-inner" id="filter-inner"></div>
       </div>
       <div class="map-wrap" style="height:45vh;margin:8px 16px 0;position:relative;">
