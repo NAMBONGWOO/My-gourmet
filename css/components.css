@@ -575,87 +575,47 @@
 }
 
 /* ══════════════════════════════════════════
-   반응형 — 아이패드 가로 / 맥 전용
-   기본값(모바일/세로)은 위 스타일 그대로 유지
+   반응형 — 컴포넌트
 ══════════════════════════════════════════ */
-@media (min-width: 1024px),
-       (min-width: 768px) and (orientation: landscape) {
 
-  /* 앱바 숨김 */
+@media (min-width: 768px) {
+  /* 앱바 숨김 (탭바 사이드바가 로고 역할) */
   .app-bar { display: none; }
 
-  /* 상단 여백 — 탭바 높이 40px */
-  .app-wrapper {
-    padding-bottom: 0 !important;
-    padding-top: 40px !important;
-  }
-
-  /* 탭바 → 상단 수평 */
-  .tab-bar {
-    position: fixed !important;
-    top: 0 !important; bottom: auto !important;
-    left: 0; right: 0;
-    height: 40px;
-    flex-direction: row !important;
-    justify-content: flex-start !important;
-    align-items: center;
-    border-top: none !important;
-    border-bottom: 0.5px solid var(--bg5);
-    padding: 0 12px !important;
-    gap: 0;
-    flex-shrink: 0;
-    box-shadow: none;
-  }
-
-  /* 탭바 로고 ::before */
-  .tab-bar::before {
-    content: 'My Gourmet.';
-    font-family: var(--font-display);
-    font-size: 15px;
-    color: var(--t1);
-    display: flex !important;
-    align-items: center;
-    padding-right: 14px;
-    margin-right: 4px;
-    border-right: 0.5px solid var(--bg5);
-    white-space: nowrap;
-    height: 100%;
-    flex-shrink: 0;
-  }
-
-  /* 탭 아이템 — 가로 배치 */
-  .tab-item {
-    flex-direction: row !important;
-    padding: 0 14px !important;
-    gap: 5px !important;
-    height: 100% !important;
-    border-radius: 0 !important;
-    border-bottom: 2px solid transparent;
-    flex: none !important;
-    width: auto !important;
-    align-items: center !important;
-  }
-
-  .tab-item svg { width: 15px !important; height: 15px !important; }
-  .tab-item span { font-size: 13px !important; }
-
-  .tab-item.active {
-    color: var(--gold) !important;
-    border-bottom: 2px solid var(--gold);
-    filter: none;
-  }
-  .tab-item.active svg { filter: none !important; }
-
-  /* FAB */
-  .fab {
-    position: fixed !important;
-    bottom: 20px !important;
-    right: 20px !important;
-  }
-
-  /* 스크린 컨테이너 */
+  /* 스크린 컨테이너 높이 조정 */
   .screen-container {
-    height: calc(100vh - 40px) !important;
-    overflow: hidden;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  /* FAB — 사이드바 공간 제외 */
+  .fab {
+    bottom: 24px;
+    right: 24px;
+    position: fixed;
+  }
+
+  /* 상세 화면 뒤로가기 버튼 위치 */
+  .detail-header {
+    padding: 16px 20px 12px;
+  }
+}
+
+@media (min-width: 1200px) {
+  /* 맥 — 탭바 더 넓게 */
+  .tab-item {
+    padding: 10px 24px;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 1024px) {
+  .app-bar { display: none; }
+  .fab {
+    bottom: 16px;
+    right: 16px;
+    position: fixed;
+  }
+  .screen-container {
+    height: 100vh;
   }
 }
