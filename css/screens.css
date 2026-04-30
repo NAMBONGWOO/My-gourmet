@@ -357,17 +357,19 @@
 @media (min-width: 1024px),
        (min-width: 768px) and (orientation: landscape) {
 
-  /* 홈 — 필터칩 한 줄 + 지도 좌 45% + 카드 우 55% */
+  /* 홈 — 필터칩 한 줄 + 지도 좌 45% + 카드 우 55%
+     row1: 필터칩(auto)  row2: 섹션헤더(auto)  row3: 카드(1fr) */
   .home-screen {
     display: grid;
     grid-template-columns: 45% 55%;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto 1fr;
     height: calc(100vh - 44px);
     overflow: hidden;
   }
 
   .filter-bar {
     grid-column: 1 / -1;
+    grid-row: 1;
     padding: 6px 12px 0;
   }
 
