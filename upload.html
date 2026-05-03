@@ -194,8 +194,10 @@
               <code>hours</code> <code>memo</code>
               <code>tag1</code> <code>tag2</code> <code>tag3</code> <code>tag4</code>
               <code>broadcast_program</code> <code>broadcast_date</code><br><br>
-        태그 예시: <code>food__한식</code> &nbsp;<code>source__백반기행</code>
-                   &nbsp;<code>status__가볼곳</code> &nbsp;<code>purpose__데이트</code><br>
+        태그는 <strong style="color:var(--gold);">한글 그대로</strong> 입력 가능합니다 →
+        <code>한식</code> <code>백반기행</code> <code>가볼곳</code> <code>가볼 곳</code><br>
+        기존 형식도 그대로 사용 가능 →
+        <code>food__한식</code> <code>source__백반기행</code> <code>status__가볼곳</code><br>
         인코딩: <code>UTF-8 BOM</code> (Excel 저장 시 자동) &nbsp;|&nbsp;
         최대: <code>1,000행 / 1회</code>
       </div>
@@ -795,9 +797,75 @@ btnUpload.onclick = async () => {
   btnUpload.disabled = false
 }
 
+// ── 한글 레이블 → tagId 변환 매핑 ──
+const TAG_LABEL_MAP = {
+  // food
+  '한식':'food__한식','일식':'food__일식','중식':'food__중식','양식':'food__양식',
+  '아시안':'food__아시안','카페':'food__카페','베이커리':'food__베이커리',
+  '주점':'food__주점','분식':'food__분식','파인다이닝':'food__파인다이닝',
+  '오마카세':'food__오마카세','가성비':'food__가성비',
+  // purpose
+  '혼밥':'purpose__혼밥','데이트':'purpose__데이트','가족모임':'purpose__가족모임',
+  '회식':'purpose__회식','단체모임':'purpose__단체모임','비즈니스':'purpose__비즈니스',
+  '기념일':'purpose__기념일','가볍게':'purpose__가볍게',
+  // space
+  '노포':'space__노포','공력':'space__노포','모던':'space__모던','세련':'space__모던',
+  '인스타감성':'space__인스타','이국적':'space__이국적','뷰맛집':'space__뷰맛집',
+  '프라이빗룸':'space__프라이빗','야외좌석':'space__야외','루프탑':'space__루프탑',
+  '조용한':'space__조용한','활기찬':'space__활기찬','아늑한':'space__아늑한',
+  // source — 방송
+  '백반기행':'source__백반기행','수요미식회':'source__수요미식회',
+  '맛있는녀석들':'source__맛있는녀석들','생활의달인':'source__생활의달인',
+  '생생정보통':'source__생생정보통','성시경먹을텐데':'source__성시경먹을텐데',
+  '성시경':'source__성시경먹을텐데',
+  '백종원3대천왕':'source__백종원3대천왕','3대천왕':'source__백종원3대천왕',
+  '토요일은밥이좋아':'source__토요일은밥이좋아','밥이좋아':'source__토요일은밥이좋아',
+  '줄서는식당':'source__줄서는식당','흑백요리사':'source__흑백요리사',
+  // source — 가이드
+  '미슐랭가이드':'source__미슐랭가이드','미슐랭':'source__미슐랭가이드',
+  '미슐랭빕구르망':'source__미슐랭빕구르망','빕구르망':'source__미슐랭빕구르망',
+  '블루리본':'source__블루리본','식신우수':'source__식신우수',
+  '망고플레이트':'source__망고플레이트','테이스트아틀라스':'source__테이스트아틀라스',
+  // source — 인증
+  '백년가게':'source__백년가게','백년소공인':'source__백년소공인',
+  '안심식당':'source__안심식당','모범음식점':'source__모범음식점',
+  '착한가격업소':'source__착한가격업소','착한가격':'source__착한가격업소',
+  '위생등급우수':'source__위생등급우수','위생우수':'source__위생등급우수',
+  '지자체맛집':'source__지자체맛집','명인인증':'source__명인인증','명인':'source__명인인증',
+  // source — 수집
+  '블로그':'source__블로그','인스타':'source__인스타','유튜브':'source__유튜브',
+  '지인':'source__지인','직접':'source__직접','지인추천':'source__지인','직접발견':'source__직접',
+  // facility
+  '무료주차':'facility__무료주차','유료주차':'facility__유료주차',
+  '발렛':'facility__발렛','주차불가':'facility__주차불가',
+  '예약가능':'facility__예약가능','예약필수':'facility__예약필수',
+  '역세권':'facility__역세권','키즈존':'facility__키즈존',
+  '반려동물':'facility__반려동물','콜키지':'facility__콜키지',
+  // status
+  '가본곳':'status__가본곳','가본 곳':'status__가본곳',
+  '가볼곳':'status__가볼곳','가볼 곳':'status__가볼곳',
+  '재방문':'status__재방문','재방문예정':'status__재방문',
+  '인생맛집':'status__인생맛집','단골맛집':'status__단골맛집','별로':'status__별로',
+}
+
+// 한글 레이블 또는 이미 tagId 형식이면 그대로 반환
+function resolveTagId(val) {
+  if (!val) return null
+  const trimmed = val.trim()
+  if (!trimmed) return null
+  // 이미 "카테고리__태그" 형식이면 그대로
+  if (trimmed.includes('__')) return trimmed
+  // 공백 제거 후 매핑 시도
+  const key = trimmed.replace(/\s/g, '')
+  return TAG_LABEL_MAP[trimmed] ?? TAG_LABEL_MAP[key] ?? null
+}
+
 function buildTagIds(r) {
   const tagIds = []
-  ;['tag1','tag2','tag3','tag4'].forEach(k => { if (r[k]) tagIds.push(r[k]) })
+  ;['tag1','tag2','tag3','tag4'].forEach(k => {
+    const resolved = resolveTagId(r[k])
+    if (resolved && !tagIds.includes(resolved)) tagIds.push(resolved)
+  })
   if (selectedSource && !tagIds.includes(selectedSource)) {
     if (!tagIds.some(t => t.startsWith('source__'))) {
       tagIds.splice(1, 0, selectedSource)
