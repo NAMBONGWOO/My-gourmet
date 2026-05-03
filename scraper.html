@@ -77,7 +77,7 @@
     My Gourmet<span style="color:var(--gold);">.</span>
   </div>
   <div style="font-size:13px;color:var(--t3);margin-bottom:24px;">로그인이 필요합니다</div>
-  <button class="btn-google" id="btn-login">Google로 로그인</button>
+  <button class="btn-ghost" style="padding:12px 24px;width:auto;" id="btn-login">앱에서 먼저 로그인해주세요</button>
 </div>
 
 <div id="main-wrap" style="display:none;">
@@ -168,7 +168,7 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
 import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, serverTimestamp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, setPersistence, browserLocalPersistence }
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, setPersistence, browserLocalPersistence }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
 
 const firebaseConfig = {
@@ -204,9 +204,11 @@ onAuthStateChanged(auth, user => {
   } else {
     document.getElementById('login-wrap').style.display = 'block'
     document.getElementById('main-wrap').style.display  = 'none'
+    // 3초 후 자동으로 앱 메인으로 이동
+    setTimeout(() => { window.location.href = 'index.html' }, 3000)
   }
 })
-document.getElementById('btn-login').onclick = () => signInWithPopup(auth, new GoogleAuthProvider())
+document.getElementById('btn-login').onclick = () => { window.location.href = 'index.html' }
 
 // API 키 관리
 function loadApiKey() {
@@ -282,26 +284,28 @@ document.getElementById('btn-analyze').onclick = async () => {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{
+          max_tokens: 2000,
+            messages: [{
             role: 'user',
-            content: `다음 URL의 내용을 분석해서 식당 정보를 JSON으로 추출해주세요. 
+            content: `다음 URL에서 소개하는 식당 정보를 분석해서 JSON으로 추출해주세요.
 URL: ${url}
 
-반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요:
+URL의 내용을 직접 읽어서 식당명, 주소, 전화번호, 메뉴 등을 추출하세요.
+URL 접근이 불가능하면 URL에서 유추할 수 있는 정보를 활용하세요.
+
+반드시 아래 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
 {
   "restaurants": [
     {
       "name": "식당명",
-      "address": "전체 주소 (도로명 주소 우선)",
+      "address": "전체 주소 (도로명 주소 우선, 모르면 시/군/구)",
       "shortAddr": "시/구/동 단위 짧은 주소",
       "phone": "전화번호 또는 null",
       "hours": "영업시간 또는 null",
       "menu": "대표 메뉴 또는 null",
       "tags": ["food__한식", "source__백반기행"],
       "memo": "핵심 내용 한 줄 요약",
-      "completeness": 0~100
+      "completeness": 0에서 100 사이 숫자
     }
   ]
 }`

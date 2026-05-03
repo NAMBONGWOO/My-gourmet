@@ -62,7 +62,7 @@
 
   <div id="login-area">
     <div style="font-size:13px;color:var(--t3);margin-bottom:20px;">로그인이 필요합니다</div>
-    <button class="btn-google" id="btn-login">Google로 로그인</button>
+    <button class="btn-ghost" style="padding:12px 24px;width:auto;" id="btn-login">앱에서 먼저 로그인해주세요</button>
   </div>
 
   <div id="main-area" style="display:none;">
@@ -169,7 +169,7 @@ import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/fire
 import { getFirestore,
          collection, getDocs, updateDoc, doc,
          query, where }    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
 
 const firebaseConfig = {
   apiKey:            "AIzaSyCMkebK6mjc9cGdykCb8uvUNNebMW4v33w",

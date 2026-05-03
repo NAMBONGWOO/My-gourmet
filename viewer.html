@@ -74,7 +74,7 @@
 <div id="login-wrap" class="login-wrap">
   <div style="font-family:var(--font-display);font-size:24px;margin-bottom:6px;">My Gourmet<span style="color:var(--gold);">.</span></div>
   <div style="font-size:13px;color:var(--t3);margin-bottom:24px;">데이터 뷰어 — 로그인이 필요합니다</div>
-  <button class="btn-google" id="btn-login">Google로 로그인</button>
+  <button class="btn-ghost" style="padding:12px 24px;width:auto;" id="btn-login">앱에서 먼저 로그인해주세요</button>
 </div>
 
 <div id="main-wrap" style="display:none;">
@@ -145,7 +145,7 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
 import { getFirestore, collection, getDocs, query, where, orderBy, doc, updateDoc, serverTimestamp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, setPersistence, browserLocalPersistence }
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, setPersistence, browserLocalPersistence }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
 
 const firebaseConfig = {
@@ -184,6 +184,8 @@ onAuthStateChanged(auth, async user => {
   } else {
     document.getElementById('login-wrap').style.display = 'block'
     document.getElementById('main-wrap').style.display  = 'none'
+    // 3초 후 자동으로 앱 메인으로 이동
+    setTimeout(() => { window.location.href = 'index.html' }, 3000)
   }
 })
 
