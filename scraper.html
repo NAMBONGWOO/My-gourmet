@@ -204,8 +204,7 @@ onAuthStateChanged(auth, user => {
   } else {
     document.getElementById('login-wrap').style.display = 'block'
     document.getElementById('main-wrap').style.display  = 'none'
-    // 3초 후 자동으로 앱 메인으로 이동
-    setTimeout(() => { window.location.href = 'index.html' }, 3000)
+    // 리다이렉트 제거 — 다른 탭 로그인 세션 간섭 방지
   }
 })
 document.getElementById('btn-login').onclick = () => { window.location.href = 'index.html' }
@@ -285,13 +284,16 @@ document.getElementById('btn-analyze').onclick = async () => {
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 2000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
             messages: [{
             role: 'user',
-            content: `다음 URL에서 소개하는 식당 정보를 분석해서 JSON으로 추출해주세요.
+            content: `다음 URL의 식당 정보를 수집해주세요.
 URL: ${url}
 
-URL의 내용을 직접 읽어서 식당명, 주소, 전화번호, 메뉴 등을 추출하세요.
-URL 접근이 불가능하면 URL에서 유추할 수 있는 정보를 활용하세요.
+방법:
+1. 웹 검색 도구로 이 URL의 내용 또는 해당 사이트의 식당 목록을 검색하세요
+2. 식당명, 주소, 전화번호, 영업시간을 최대한 추출하세요
+3. URL이 목록 페이지라면 포함된 모든 식당을 추출하세요
 
 반드시 아래 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
 {
@@ -303,7 +305,7 @@ URL 접근이 불가능하면 URL에서 유추할 수 있는 정보를 활용하
       "phone": "전화번호 또는 null",
       "hours": "영업시간 또는 null",
       "menu": "대표 메뉴 또는 null",
-      "tags": ["food__한식", "source__백반기행"],
+      "tags": ["food__한식", "source__생생정보통"],
       "memo": "핵심 내용 한 줄 요약",
       "completeness": 0에서 100 사이 숫자
     }
@@ -316,11 +318,13 @@ URL 접근이 불가능하면 URL에서 유추할 수 있는 정보를 활용하
       if (!res.ok) throw new Error(`API 오류: ${res.status}`)
       const data = await res.json()
 
-      // 텍스트 블록에서 JSON 추출
+      // 텍스트 블록 추출 (tool_use, tool_result 블록 건너뜀)
       const textBlock = data.content?.find(b => b.type === 'text')
       if (!textBlock) throw new Error('응답 없음')
 
-      const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/)
+      // JSON 추출 — ```json ... ``` 펜스도 처리
+      const raw = textBlock.text.replace(/```json|```/g, '')
+      const jsonMatch = raw.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('JSON 파싱 실패')
 
       const parsed = JSON.parse(jsonMatch[0])

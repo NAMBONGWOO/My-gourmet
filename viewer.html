@@ -87,6 +87,7 @@
       <span class="badge badge-blue" id="badge-tags">태그 있음 0개</span>
       <span class="badge badge-gray" id="badge-notags">태그 없음 0개</span>
       <button class="btn btn-ghost" id="btn-export">📥 CSV 내보내기 ▾</button>
+      <button class="btn" id="btn-delete-all" style="background:#ffd5d5;color:#8b1a1a;border-color:#e08080;">🗑️ 전체 삭제</button>
       <a href="index.html" style="font-size:12px;color:var(--t3);text-decoration:none;">← 앱으로</a>
     </div>
   </div>
@@ -143,7 +144,7 @@
 
 <script type="module">
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
-import { getFirestore, collection, getDocs, query, where, orderBy, doc, updateDoc, serverTimestamp }
+import { getFirestore, collection, getDocs, query, where, orderBy, doc, updateDoc, deleteDoc, serverTimestamp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, setPersistence, browserLocalPersistence }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
@@ -184,13 +185,12 @@ onAuthStateChanged(auth, async user => {
   } else {
     document.getElementById('login-wrap').style.display = 'block'
     document.getElementById('main-wrap').style.display  = 'none'
-    // 3초 후 자동으로 앱 메인으로 이동
-    setTimeout(() => { window.location.href = 'index.html' }, 3000)
+    // 리다이렉트 제거 — 다른 탭 로그인 세션 간섭 방지
   }
 })
 
 document.getElementById('btn-login').onclick =
-  () => signInWithPopup(auth, new GoogleAuthProvider())
+  () => window.location.href = 'index.html'
 
 async function loadData() {
   document.getElementById('loading-area').style.display = 'block'
@@ -538,6 +538,53 @@ function field(label, value) {
 ['search-input','filter-coord','filter-tags','filter-source'].forEach(id => {
   document.getElementById(id).addEventListener('input', applyFilters)
   document.getElementById(id).addEventListener('change', applyFilters)
+})
+
+// ── 전체 데이터 삭제 ──
+document.getElementById('btn-delete-all').addEventListener('click', async () => {
+  if (!allData.length) { alert('삭제할 데이터가 없습니다'); return }
+
+  const firstConfirm = confirm(
+    `⚠️ 전체 데이터 삭제\n\n총 ${allData.length}개의 식당 데이터를 모두 삭제합니다.\n이 작업은 되돌릴 수 없습니다.\n\n계속하시겠습니까?`
+  )
+  if (!firstConfirm) return
+
+  const secondConfirm = confirm(
+    `🚨 최종 확인\n\n정말로 ${allData.length}개 데이터를 영구 삭제합니까?\n\n"확인"을 누르면 즉시 삭제가 시작됩니다.`
+  )
+  if (!secondConfirm) return
+
+  const btn = document.getElementById('btn-delete-all')
+  btn.disabled = true
+  btn.textContent = '삭제 중…'
+
+  let deleted = 0
+  let failed  = 0
+
+  // Firestore는 일괄 삭제 없음 — 개별 삭제 (배치 500개 제한 고려)
+  const BATCH = 20  // 동시 요청 20개씩
+  for (let i = 0; i < allData.length; i += BATCH) {
+    const chunk = allData.slice(i, i + BATCH)
+    await Promise.all(chunk.map(async r => {
+      try {
+        await deleteDoc(doc(db, 'restaurants', r.id))
+        deleted++
+      } catch(e) {
+        failed++
+        console.error('삭제 실패:', r.id, e)
+      }
+    }))
+    btn.textContent = `삭제 중… ${deleted}/${allData.length}`
+  }
+
+  btn.disabled = false
+  btn.textContent = '🗑️ 전체 삭제'
+
+  const msg = failed
+    ? `삭제 완료: ${deleted}개 성공 / ${failed}개 실패\n페이지를 새로고침합니다.`
+    : `✅ ${deleted}개 전체 삭제 완료!\n페이지를 새로고침합니다.`
+  alert(msg)
+  window.location.reload()
 })
 
 // CSV 내보내기 — 필드 선택 시트

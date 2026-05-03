@@ -288,8 +288,7 @@ onAuthStateChanged(auth, user => {
   } else {
     document.getElementById('login-wrap').style.display = 'block'
     document.getElementById('main-wrap').style.display  = 'none'
-    // 3초 후 자동으로 앱 메인으로 이동
-    setTimeout(() => { window.location.href = 'index.html' }, 3000)
+    // 리다이렉트 제거 — 다른 탭 로그인 세션 간섭 방지
   }
 })
 document.getElementById('btn-login').onclick = () => { window.location.href = 'index.html' }
@@ -402,11 +401,15 @@ document.getElementById('btn-collect').onclick = async () => {
 
     try {
       const prompt = `당신은 한국 TV 방송 맛집 정보 전문가입니다.
-${prog.name} 방송에서 소개된 맛집 목록을 알고 있는 대로 최대한 많이 알려주세요.
+웹 검색 도구를 사용해서 "${prog.name}" 방송에서 소개된 맛집 목록을 찾아주세요.
 수집 범위: ${rangeText}
 
+검색 방법:
+1. "${prog.name} 맛집 목록", "${prog.name} 방송 식당" 등으로 검색하세요
+2. 공식 방송사 홈페이지, 나무위키, 방송 정보 사이트를 참고하세요
+3. 가능한 많은 식당을 수집하되, 확인된 정보만 포함하세요
+
 주의사항:
-- 확실히 알고 있는 정보만 포함하세요
 - 불확실한 주소는 시/도 단위라도 기입하세요
 - 모르는 필드는 null로 표시하세요
 - 반드시 JSON 형식으로만 응답하세요 (다른 텍스트 없이)
@@ -433,10 +436,12 @@ ${prog.name} 방송에서 소개된 맛집 목록을 알고 있는 대로 최대
           'Content-Type':'application/json',
           'x-api-key': apiKey,
           'anthropic-version':'2023-06-01',
+          'anthropic-beta': 'web-search-2025-03-05'
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 4000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
           messages: [{ role:'user', content: prompt }]
         })
       })
@@ -446,7 +451,9 @@ ${prog.name} 방송에서 소개된 맛집 목록을 알고 있는 대로 최대
       const textBlock = data.content?.find(b => b.type === 'text')
       if (!textBlock) throw new Error('응답 없음')
 
-      const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/)
+      // JSON 추출 — ```json ... ``` 펜스도 처리
+      const raw = textBlock.text.replace(/```json|```/g, '')
+      const jsonMatch = raw.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('JSON 파싱 실패')
 
       const parsed = JSON.parse(jsonMatch[0])
