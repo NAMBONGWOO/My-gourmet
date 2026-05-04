@@ -98,13 +98,16 @@
 
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div class="card-title" style="margin:0;">📋 좌표 없는 식당 목록 (전체)</div>
-          <span class="badge badge-red" id="preview-count">0개</span>
+          <div class="card-title" style="margin:0;">📋 좌표 없는 식당 목록</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="badge badge-red" id="preview-count">0개</span>
+            <button id="btn-csv-nocoord" style="padding:5px 12px;background:var(--bg3);color:var(--t2);border:0.5px solid var(--bg5);border-radius:var(--r-sm);font-size:12px;font-family:var(--font-body);cursor:pointer;">📥 CSV 다운로드</button>
+          </div>
         </div>
         <div class="preview-wrap">
           <table>
             <thead>
-              <tr><th>#</th><th>상호명</th><th>주소</th><th>상태</th></tr>
+              <tr><th>#</th><th>상호명</th><th>주소</th><th>변환상태</th><th>실패사유</th></tr>
             </thead>
             <tbody id="preview-tbody"></tbody>
           </table>
@@ -285,50 +288,126 @@ async function loadData() {
   panelArea.style.display   = 'block'
 }
 
+// 각 항목의 변환 결과를 기록하는 맵 { docId: { status, reason } }
+const resultMap = {}
+
 function renderPreview() {
   const tbody = document.getElementById('preview-tbody')
   if (!noCoorDocs.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--t4);padding:20px;">좌표 없는 식당이 없습니다 🎉</td></tr>`
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--t4);padding:20px;">좌표 없는 식당이 없습니다 🎉</td></tr>`
     return
   }
-  tbody.innerHTML = noCoorDocs.map((r, i) => `
-    <tr>
+  tbody.innerHTML = noCoorDocs.map((r, i) => {
+    const res = resultMap[r.id]
+    let statusCell, reasonCell
+
+    if (!res) {
+      // 변환 전 초기 상태
+      statusCell = r.address
+        ? '<span class="badge badge-blue">대기중</span>'
+        : '<span class="badge badge-red">주소없음</span>'
+      reasonCell = r.address ? '' : '주소 필드가 비어있음'
+    } else if (res.status === 'ok') {
+      statusCell = '<span class="badge badge-green">✓ 성공</span>'
+      reasonCell = `${res.lat?.toFixed(5)}, ${res.lng?.toFixed(5)}`
+    } else if (res.status === 'skip') {
+      statusCell = '<span class="badge" style="background:var(--bg3);color:var(--t4);border:0.5px solid var(--bg5);">건너뜀</span>'
+      reasonCell = res.reason
+    } else {
+      statusCell = '<span class="badge badge-red">✗ 실패</span>'
+      reasonCell = `<span style="color:#f5c4b3;">${res.reason}</span>`
+    }
+
+    return `<tr>
       <td style="color:var(--t4);">${i+1}</td>
       <td title="${r.name}">${(r.name??'').length>16 ? r.name.slice(0,16)+'…' : r.name}</td>
-      <td title="${r.address??''}">${(r.address??'주소없음').slice(0,24)}</td>
-      <td>${r.address
-        ? '<span class="badge badge-blue">변환 가능</span>'
-        : '<span class="badge badge-red">주소 없음</span>'}</td>
-    </tr>`).join('')
+      <td title="${r.address??''}">${(r.address??'주소없음').slice(0,22)}</td>
+      <td>${statusCell}</td>
+      <td style="color:var(--t3);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;" title="${reasonCell}">${reasonCell}</td>
+    </tr>`
+  }).join('')
 }
 
+// CSV 다운로드 (upload.html 동일 포맷)
+document.getElementById('btn-csv-nocoord').addEventListener('click', () => {
+  if (!noCoorDocs.length) { alert('좌표 없는 항목이 없습니다'); return }
+  function esc(v) {
+    if (!v && v !== 0) return ''
+    const s = String(v)
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s
+  }
+  const header = 'name,address,shortAddr,phone,hours,memo,tag1,tag2,tag3,tag4,broadcast_program,broadcast_date'
+  const rows = noCoorDocs.map(r => {
+    const tags = (r.tagIds ?? []).slice(0,4)
+    const res = resultMap[r.id]
+    // 실패 사유를 memo에 추가해서 내보내기
+    const failNote = (res && res.status === 'fail') ? `[좌표변환실패: ${res.reason}]` : ''
+    const memoVal = [r.memo ?? '', failNote].filter(Boolean).join(' ')
+    return [
+      esc(r.name), esc(r.address), esc(r.shortAddr), esc(r.phone),
+      esc(r.hours), esc(memoVal),
+      esc(tags[0]??''), esc(tags[1]??''), esc(tags[2]??''), esc(tags[3]??''),
+      esc(r.broadcast?.program ?? ''), esc(r.broadcast?.date ?? '')
+    ].join(',')
+  })
+  const csv = '\uFEFF' + [header, ...rows].join('\n')
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}))
+  a.download = `MGA_좌표없음_${new Date().toISOString().slice(0,10)}.csv`
+  a.click()
+})
+
 // ── 카카오 REST API 지오코딩 ──
+// 반환: { lat, lng } | { error: '사유' }
 async function geocodeAddress(address) {
-  if (!address) return null
+  if (!address) return { error: '주소 필드 없음' }
+
+  // 1차: 주소 검색 (정형 주소)
+  let res1, data1
   try {
-    // 1차: 주소 검색
-    const res1 = await fetch(
+    res1 = await fetch(
       `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`,
       { headers: { Authorization: `KakaoAK ${KAKAO_REST_KEY}` } }
     )
-    const data1 = await res1.json()
-    if (data1.documents && data1.documents.length > 0) {
+    if (!res1.ok) {
+      const errBody = await res1.json().catch(() => ({}))
+      const msg = errBody.msg ?? res1.statusText
+      return { error: `API 오류 ${res1.status}: ${msg}` }
+    }
+    data1 = await res1.json()
+    if (data1.documents?.length > 0) {
       return { lat: parseFloat(data1.documents[0].y), lng: parseFloat(data1.documents[0].x) }
     }
+  } catch(e) {
+    return { error: `네트워크 오류: ${e.message}` }
+  }
 
-    // 2차: 키워드 검색
-    const res2 = await fetch(
+  // 2차: 키워드 검색 (상호명+주소 혼합 or 약식 주소)
+  let res2, data2
+  try {
+    res2 = await fetch(
       `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(address)}`,
       { headers: { Authorization: `KakaoAK ${KAKAO_REST_KEY}` } }
     )
-    const data2 = await res2.json()
-    if (data2.documents && data2.documents.length > 0) {
+    if (!res2.ok) {
+      const errBody = await res2.json().catch(() => ({}))
+      return { error: `키워드API 오류 ${res2.status}: ${errBody.msg ?? res2.statusText}` }
+    }
+    data2 = await res2.json()
+    if (data2.documents?.length > 0) {
       return { lat: parseFloat(data2.documents[0].y), lng: parseFloat(data2.documents[0].x) }
     }
-    return null
   } catch(e) {
-    return null
+    return { error: `키워드 네트워크 오류: ${e.message}` }
   }
+
+  // 둘 다 결과 없음 → 주소 불일치
+  const addr1cnt = data1?.meta?.total_count ?? 0
+  const addr2cnt = data2?.meta?.total_count ?? 0
+  if (addr1cnt === 0 && addr2cnt === 0) {
+    return { error: '주소/키워드 검색결과 없음 (주소 불일치 또는 너무 짧은 주소)' }
+  }
+  return { error: '결과 매핑 실패' }
 }
 
 btnStart.onclick = async () => {
@@ -338,6 +417,9 @@ btnStart.onclick = async () => {
 
   const total = target.filter(r => r.address).length
   if (!total) { alert('변환할 주소가 없습니다'); return }
+
+  // resultMap 초기화
+  Object.keys(resultMap).forEach(k => delete resultMap[k])
 
   stopFlag = false
   btnStart.disabled     = true
@@ -353,22 +435,38 @@ btnStart.onclick = async () => {
 
   for (const r of target) {
     if (stopFlag) { log('⏹ 중단됨', 'info'); break }
-    if (!r.address) { log(`건너뜀: ${r.name}`, 'skip'); continue }
+
+    if (!r.address) {
+      resultMap[r.id] = { status: 'skip', reason: '주소 필드 없음' }
+      log(`건너뜀: ${r.name} — 주소 필드 없음`, 'skip')
+      renderPreview()
+      continue
+    }
 
     const coords = await geocodeAddress(r.address)
-    if (coords) {
+
+    if (coords.lat !== undefined) {
+      // 성공
       try {
         await updateDoc(doc(db, 'restaurants', r.id), { lat: coords.lat, lng: coords.lng })
         ok++
-        log(`✓ ${r.name} → ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`, 'ok')
+        resultMap[r.id] = { status: 'ok', lat: coords.lat, lng: coords.lng }
+        log(`✓ ${r.name} → ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`, 'ok')
       } catch(e) {
         fail++
-        log(`✗ ${r.name}: ${e.message}`, 'err')
+        resultMap[r.id] = { status: 'fail', reason: `Firestore 저장 오류: ${e.message}` }
+        log(`✗ ${r.name}: Firestore 저장 오류 — ${e.message}`, 'err')
       }
     } else {
+      // 실패 — coords.error에 사유 있음
       fail++
-      log(`✗ 검색 실패: ${r.name}`, 'err')
+      const reason = coords.error ?? '알 수 없는 오류'
+      resultMap[r.id] = { status: 'fail', reason }
+      log(`✗ ${r.name} [${(r.address??'').slice(0,20)}] — ${reason}`, 'err')
     }
+
+    // 테이블 실시간 반영
+    renderPreview()
 
     const done = ok + fail
     progressBar.style.width = Math.round(done / total * 100) + '%'
@@ -393,6 +491,17 @@ btnStart.onclick = async () => {
   document.getElementById('done-msg').textContent =
     `성공 ${ok}개 · 실패 ${fail}개 · 총 ${ok+fail}개 처리`
   log(`완료! 성공 ${ok}개 / 실패 ${fail}개`, 'info')
+
+  // 실패 목록 요약
+  const failList = Object.entries(resultMap).filter(([,v]) => v.status === 'fail')
+  if (failList.length > 0) {
+    log(`── 실패 항목 ${failList.length}개 요약 ──`, 'info')
+    failList.forEach(([id, v]) => {
+      const doc_ = noCoorDocs.find(r => r.id === id)
+      log(`  ${doc_?.name ?? id}: ${v.reason}`, 'err')
+    })
+  }
+
   await loadData()
 }
 
@@ -403,6 +512,7 @@ document.getElementById('btn-again').onclick = async () => {
   document.getElementById('progress-wrap').style.display = 'none'
   logBox.innerHTML = ''
   progressBar.style.width = '0%'
+  Object.keys(resultMap).forEach(k => delete resultMap[k])
   await loadData()
 }
 
