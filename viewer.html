@@ -661,45 +661,38 @@ document.getElementById('btn-delete-selected').addEventListener('click', async (
   window.location.reload()
 })
 
+// ── CSV 공통 유틸 ──
+function _esc(v) {
+  if (v == null || v === '') return ''
+  const s = String(v)
+  return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s
+}
+function _tagLabel(t) { return t ? (t.includes('__') ? t.split('__')[1] : t) : '' }
+
+const EXPORT_HEADER = 'name,address,shortAddr,phone,hours,memo,tag1,tag2,tag3,tag4,broadcast_program,broadcast_date'
+
+function buildExportRow(r) {
+  const tags = (r.tagIds ?? []).slice(0, 4).map(_tagLabel)
+  return [
+    _esc(r.name), _esc(r.address), _esc(r.shortAddr), _esc(r.phone),
+    _esc(r.hours), _esc(r.memo),
+    _esc(tags[0]??''), _esc(tags[1]??''), _esc(tags[2]??''), _esc(tags[3]??''),
+    _esc(r.broadcast?.program ?? ''), _esc(r.broadcast?.date ?? '')
+  ].join(',')
+}
+
 // ── 좌표 없는 목록 CSV 다운로드 ──
 document.getElementById('btn-nocoord-csv').addEventListener('click', () => {
   const noCoord = allData.filter(r => !r.lat || !r.lng)
   if (!noCoord.length) { alert('좌표 없는 항목이 없습니다 🎉'); return }
-
-  // upload.html과 동일한 포맷으로 내보내기
-  const header = 'name,address,shortAddr,phone,hours,memo,tag1,tag2,tag3,tag4,broadcast_program,broadcast_date'
-
-  function esc(v) {
-    if (v == null || v === '') return ''
-    const s = String(v)
-    return s.includes(',') || s.includes('"') || s.includes('\n')
-      ? `"${s.replace(/"/g,'""')}"` : s
-  }
-
-  function getTags(r) {
-    const tags = (r.tagIds ?? []).slice(0, 4)
-    return [tags[0]??'', tags[1]??'', tags[2]??'', tags[3]??'']
-  }
-
-  const rows = noCoord.map(r => {
-    const [t1,t2,t3,t4] = getTags(r)
-    const bp = r.broadcast?.program ?? ''
-    const bd = r.broadcast?.date ?? ''
-    return [
-      esc(r.name), esc(r.address), esc(r.shortAddr), esc(r.phone),
-      esc(r.hours), esc(r.memo),
-      esc(t1), esc(t2), esc(t3), esc(t4),
-      esc(bp), esc(bd)
-    ].join(',')
-  })
-
-  const csv = '\uFEFF' + [header, ...rows].join('\n')
+  const csv = '\uFEFF' + [EXPORT_HEADER, ...noCoord.map(buildExportRow)].join('\n')
   const a = document.createElement('a')
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}))
   a.download = `MGA_좌표없음_${new Date().toISOString().slice(0,10)}.csv`
   a.click()
   alert(`📍 좌표 없는 항목 ${noCoord.length}개를 CSV로 내보냈습니다.\n\n주소를 수정한 후 upload.html에서 [업데이트 모드]로 재업로드하면 됩니다.`)
 })
+
 // ── CSV 내보내기 (upload.html 동일 포맷 + 빈칸필터 옵션) ──
 document.getElementById('btn-export').addEventListener('click', () => {
   const existing = document.getElementById('export-sheet')
@@ -711,7 +704,6 @@ document.getElementById('btn-export').addEventListener('click', () => {
     background:var(--bg1);border-left:0.5px solid var(--bg5);z-index:300;
     padding:20px;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,.3);`
 
-  // 빈칸 필터 옵션 목록
   const EMPTY_OPTS = [
     { key:'address', label:'주소',     get: r => r.address??'' },
     { key:'phone',   label:'전화번호', get: r => r.phone??'' },
@@ -720,7 +712,7 @@ document.getElementById('btn-export').addEventListener('click', () => {
     { key:'memo',    label:'메모',     get: r => r.memo??'' },
   ]
   const emptyFilter = new Set()
-  let scope = 'filtered' // 'filtered' | 'all'
+  let scope = 'filtered'
 
   function renderSheet() {
     sheet.innerHTML = `
@@ -729,7 +721,6 @@ document.getElementById('btn-export').addEventListener('click', () => {
         <button id="close-export" style="background:var(--bg3);border:0.5px solid var(--bg5);
           border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;color:var(--t2);">×</button>
       </div>
-
       <div style="font-size:11px;color:var(--t3);letter-spacing:.05em;margin-bottom:6px;">내보낼 범위</div>
       <div style="display:flex;gap:6px;margin-bottom:16px;">
         <button data-scope="filtered" style="flex:1;padding:7px;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font-body);
@@ -741,7 +732,6 @@ document.getElementById('btn-export').addEventListener('click', () => {
           border:0.5px solid ${scope==='all'?'var(--gold)':'var(--bg5)'};">
           전체 (${allData.length}개)</button>
       </div>
-
       <div style="font-size:11px;color:var(--t3);letter-spacing:.05em;margin-bottom:6px;">빈칸 있는 항목만 필터</div>
       <div style="font-size:11px;color:var(--t4);margin-bottom:8px;">체크한 필드가 비어있는 행만 포함됩니다</div>
       ${EMPTY_OPTS.map(f => `
@@ -751,13 +741,11 @@ document.getElementById('btn-export').addEventListener('click', () => {
             style="accent-color:var(--gold);width:14px;height:14px;flex-shrink:0;"/>
           ${f.label} 없음
         </label>`).join('')}
-
       <div style="margin-top:16px;padding:10px;background:var(--bg2);border-radius:var(--r-sm);
         border:0.5px solid var(--bg5);font-size:11px;color:var(--t3);line-height:1.7;">
         📌 <strong style="color:var(--t2);">upload.html과 동일한 포맷</strong>으로 내보냅니다<br>
         name / address / shortAddr / phone / hours / memo / tag1~4 / broadcast_program / broadcast_date
       </div>
-
       <button id="do-export" style="width:100%;padding:12px;margin-top:14px;background:var(--gold);color:#fff;
         border:none;border-radius:var(--r-md);font-size:14px;font-weight:500;
         font-family:var(--font-body);cursor:pointer;">📥 다운로드</button>`
@@ -779,9 +767,8 @@ document.getElementById('btn-export').addEventListener('click', () => {
         )
       }
       if (!rows.length) { alert('내보낼 데이터가 없습니다'); return }
-      const csvRows = rows.map(r => buildExportRow(r))
       const suffix = emptyFilter.size > 0 ? '_빈칸포함' : ''
-      const csv = '\uFEFF' + [EXPORT_HEADER, ...csvRows].join('\n')
+      const csv = '\uFEFF' + [EXPORT_HEADER, ...rows.map(buildExportRow)].join('\n')
       const a = document.createElement('a')
       a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}))
       a.download = `MGA_데이터${suffix}_${new Date().toISOString().slice(0,10)}.csv`

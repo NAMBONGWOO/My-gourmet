@@ -30,10 +30,10 @@
     .stat-row { display:flex; gap:20px; flex-wrap:wrap; margin-top:10px; }
     .stat-item { font-size:12px; color:var(--t3); }
     .stat-item strong { color:var(--gold); font-size:15px; }
-    .log-box { background:var(--bg0); border:0.5px solid var(--bg5); border-radius:var(--r-sm); padding:12px; height:220px; overflow-y:auto; font-size:11px; font-family:monospace; color:var(--t3); margin-top:12px; }
+    .log-box { background:var(--bg0); border:0.5px solid var(--bg5); border-radius:var(--r-sm); padding:12px; height:260px; overflow-y:auto; font-size:11px; font-family:monospace; color:var(--t3); margin-top:12px; }
     .log-ok   { color:#9fe1cb; }
-    .log-err  { color:#f5c4b3; }
-    .log-info { color:var(--gold); }
+    .log-err  { color:#ffb3a0; background:rgba(242,100,77,.08); padding:2px 4px; border-radius:3px; border-left:2px solid #f2644d; margin:1px 0; display:block; }
+    .log-info { color:var(--gold); font-weight:500; }
     .log-skip { color:var(--t4); }
     .btn-gold  { padding:12px 28px; background:var(--gold); color:#fff; border:none; border-radius:var(--r-md); font-size:14px; font-weight:500; font-family:var(--font-body); cursor:pointer; }
     .btn-gold:disabled { opacity:.5; cursor:not-allowed; }
@@ -42,9 +42,10 @@
     .spinner { width:24px; height:24px; border:2px solid var(--bg5); border-top-color:var(--gold); border-radius:50%; animation:spin 0.7s linear infinite; margin:30px auto; }
     @keyframes spin { to { transform:rotate(360deg); } }
     .preview-wrap { overflow-x:auto; overflow-y:auto; max-height:320px; margin-top:12px; border-radius:var(--r-sm); border:0.5px solid var(--bg5); }
-    table { width:100%; border-collapse:collapse; font-size:12px; }
+    table { width:max-content; min-width:100%; border-collapse:collapse; font-size:12px; }
     thead th { position:sticky; top:0; z-index:1; background:var(--bg3); color:var(--t3); padding:8px 10px; text-align:left; font-weight:500; border-bottom:0.5px solid var(--bg5); white-space:nowrap; }
-    td { padding:7px 10px; border-bottom:0.5px solid var(--bg4); color:var(--t2); white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis; }
+    td { padding:7px 10px; border-bottom:0.5px solid var(--bg4); color:var(--t2); white-space:nowrap; }
+    td.reason-cell { white-space:normal; min-width:180px; max-width:320px; word-break:break-all; line-height:1.5; }
     tr:hover td { background:var(--bg3); }
     a.back-link { color:var(--t3); font-size:13px; text-decoration:none; }
     a.back-link:hover { color:var(--gold); }
@@ -323,7 +324,7 @@ function renderPreview() {
       <td title="${r.name}">${(r.name??'').length>16 ? r.name.slice(0,16)+'…' : r.name}</td>
       <td title="${r.address??''}">${(r.address??'주소없음').slice(0,22)}</td>
       <td>${statusCell}</td>
-      <td style="color:var(--t3);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;" title="${reasonCell}">${reasonCell}</td>
+      <td class="reason-cell" style="color:var(--t3);font-size:11px;">${reasonCell}</td>
     </tr>`
   }).join('')
 }
