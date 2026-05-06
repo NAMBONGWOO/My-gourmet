@@ -74,7 +74,7 @@
 <div id="login-wrap" class="login-wrap">
   <div style="font-family:var(--font-display);font-size:24px;margin-bottom:6px;">My Gourmet<span style="color:var(--gold);">.</span></div>
   <div style="font-size:13px;color:var(--t3);margin-bottom:24px;">데이터 뷰어 — 로그인이 필요합니다</div>
-  <button class="btn-ghost" style="padding:12px 24px;width:auto;" id="btn-login">앱에서 먼저 로그인해주세요</button>
+  <button class="btn-ghost" style="padding:12px 24px;width:auto;" id="btn-login">🔑 Google로 로그인</button>
 </div>
 
 <div id="main-wrap" style="display:none;">
@@ -149,7 +149,7 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
 import { getFirestore, collection, getDocs, query, where, orderBy, doc, updateDoc, deleteDoc, serverTimestamp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, setPersistence, browserLocalPersistence }
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, setPersistence, browserLocalPersistence }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
 
 const firebaseConfig = {
@@ -192,8 +192,10 @@ onAuthStateChanged(auth, async user => {
   }
 })
 
-document.getElementById('btn-login').onclick =
-  () => window.location.href = 'index.html'
+document.getElementById('btn-login').onclick = () =>
+  signInWithPopup(auth, new GoogleAuthProvider()).catch(e => {
+    if (e.code !== 'auth/popup-closed-by-user') alert('로그인 실패: ' + e.message)
+  })
 
 async function loadData() {
   document.getElementById('loading-area').style.display = 'block'
